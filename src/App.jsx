@@ -1,4 +1,6 @@
 import { useState, useRef } from "react";
+import { AuthGate, useAuth } from "./Auth";
+import { supabase } from "./supabase";
 
 const B = {
   navy:"#1E3A5F",navyDeep:"#0F1D30",navyMid:"#2A4D7A",
@@ -123,6 +125,7 @@ const scoreColor=s=>s>=80?B.green:s>=60?B.orange:B.red;
 // APPLICANT PORTAL
 // ═══════════════════════════════════════
 function ApplicantPortal({onSwitch}){
+  const { user, signOut } = useAuth();
   const [step,setStep]=useState(1);
   const [form,setForm]=useState({loanType:"hardmoney",firstName:"",lastName:"",email:"",phone:"",entityType:"llc",entityName:"",entityState:"FL",mailAddr:"",mailCity:"",mailState:"FL",mailZip:"",citizenship:"us",propAddr:"",propCity:"",propState:"FL",propZip:"",propType:"sfr",occupancy:"investment",beds:"",baths:"",sqft:"",yearBuilt:"",condition:"fair",purpose:"purchase",purchasePrice:"",loanAmt:"",arv:"",repairBudget:"",loanTerm:"12",downPmt:"",exitStrategy:[],exitNotes:"",projectDesc:"",experience:"4-10",propsOwned:"",creditScore:"720+",liquid:"",bkHist:"none",liens:"none",gc:"self",addNotes:"",
     // Construction fields
@@ -162,7 +165,7 @@ function ApplicantPortal({onSwitch}){
         <div style={{position:"absolute",top:"-30%",right:"-10%",width:500,height:500,background:`radial-gradient(circle,${B.orangeGlow},transparent 70%)`,borderRadius:"50%"}} />
         <div style={{position:"absolute",bottom:0,left:0,right:0,height:3,background:`linear-gradient(90deg,${B.orange},${B.orangeLight},${B.orange})`}} />
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 32px",borderBottom:"1px solid rgba(255,255,255,0.06)",position:"relative",zIndex:1}}>
-          <Logo /><Btn variant="ghost" onClick={onSwitch} style={{color:B.s400,borderColor:"rgba(255,255,255,0.15)",fontSize:11}}>🔐 Admin Portal</Btn>
+          <Logo /><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:B.s400,fontSize:11,maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email}</span><Btn variant="ghost" onClick={signOut} style={{color:B.s400,borderColor:"rgba(255,255,255,0.15)",fontSize:11}}>Sign Out</Btn><Btn variant="ghost" onClick={onSwitch} style={{color:B.s400,borderColor:"rgba(255,255,255,0.15)",fontSize:11}}>🔐 Admin</Btn></div>
         </div>
         <div style={{padding:"28px 32px 36px",position:"relative",zIndex:1}}>
           <h1 style={{fontFamily:"'Fraunces',Georgia,serif",fontSize:28,fontWeight:800,color:"#fff",marginBottom:4}}>{form.loanType==="construction"?"Ground-Up Construction Loan Application":"Hard Money Loan Application"}</h1>
@@ -311,7 +314,13 @@ function ApplicantPortal({onSwitch}){
             </label>
           </div>
         ))}</div></Card>
-        <div style={{display:"flex",justifyContent:"space-between",marginTop:20}}><Btn variant="back" onClick={()=>setStep(5)}>← Back</Btn><Btn variant="orange" disabled={!consentAll.every(Boolean)} onClick={()=>setSubmitted(true)}>Submit Application & Documents</Btn></div></div>}
+        <div style={{display:"flex",justifyContent:"space-between",marginTop:20}}><Btn variant="back" onClick={()=>setStep(5)}>← Back</Btn><Btn variant="orange" disabled={!consentAll.every(Boolean)} onClick={async()=>{
+          const refCode="ZW-HM-"+uid();
+          try{
+            await supabase.from("loan_applications").insert({user_id:user?.id,ref_code:refCode,loan_type:form.loanType,status:"pending",form_data:form,uploads_count:uploads.length});
+          }catch(e){console.error("Save error:",e)}
+          setSubmitted(true);
+        }}>Submit Application & Documents</Btn></div></div>}
       </div>
     </div>
   );
@@ -520,5 +529,5 @@ function AdminPortal({onSwitch}){
 // ═══════════════════════════════════════
 export default function App(){
   const [portal,setPortal]=useState("applicant");
-  return portal==="admin"?<AdminPortal onSwitch={()=>setPortal("applicant")} />:<ApplicantPortal onSwitch={()=>setPortal("admin")} />;
+  return <AuthGate>{portal==="admin"?<AdminPortal onSwitch={()=>setPortal("applicant")} />:<ApplicantPortal onSwitch={()=>setPortal("admin")} />}</AuthGate>;
 }
