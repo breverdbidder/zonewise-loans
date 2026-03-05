@@ -22,9 +22,114 @@ const MOCK=[
   {id:"ZW-2602",name:"Sarah Chen",email:"schen@outlook.com",phone:"(407) 555-5678",entity:"Individual",propAddr:"1455 S Atlantic Ave, Cocoa Beach, FL 32931",propType:"Duplex",purpose:"Bridge",loanType:"hardmoney",purchasePrice:580000,loanAmt:435000,arv:720000,repairBudget:60000,experience:"4-10 Deals",credit:"680-719",liquid:350000,condition:"Fair",term:"18",status:"reviewed",submitted:"2026-03-01",uploads:6,score:78},
   {id:"ZW-2603",name:"David Okafor",email:"dokafor@gmail.com",phone:"(321) 555-9012",entity:"Okafor Capital LLC",propAddr:"780 Brevard Ave, Cocoa, FL 32922",propType:"Fourplex",purpose:"Purchase",loanType:"hardmoney",purchasePrice:340000,loanAmt:255000,arv:510000,repairBudget:110000,experience:"25+ Deals",credit:"720+",liquid:520000,condition:"Distressed",term:"12",status:"approved",submitted:"2026-02-28",uploads:8,score:91},
   {id:"ZW-2604",name:"Elena Vasquez",email:"elena@vbuilders.com",phone:"(954) 555-3456",entity:"Vasquez Builders LLC",propAddr:"Lot 12, Oceanview Dr, Satellite Beach, FL 32937",propType:"Single Family",purpose:"Ground-Up Construction",loanType:"construction",purchasePrice:180000,loanAmt:720000,arv:1100000,repairBudget:0,experience:"11-25 Deals",credit:"720+",liquid:450000,condition:"Vacant Lot",term:"18",status:"pending",submitted:"2026-03-04",uploads:9,score:null,lotValue:180000,hardCosts:580000,softCosts:95000,totalBudget:675000,completedValue:1100000,constructionType:"ground_up",permitStatus:"approved",plansStatus:"complete",gcContract:"self"},
+  {id:"ZW-2605",name:"James & Lisa Park",email:"jpark@parkinvest.com",phone:"(321) 555-7890",entity:"Park Investments LLC",propAddr:"1920 Aurora Rd, Melbourne, FL 32935",propType:"Triplex",purpose:"DSCR Purchase",loanType:"dscr",purchasePrice:480000,loanAmt:384000,arv:480000,repairBudget:0,experience:"11-25 Deals",credit:"720+",liquid:240000,condition:"Good",term:"360",status:"pending",submitted:"2026-03-04",uploads:5,score:null,monthlyRent:4200,annualTaxes:5400,annualInsurance:2400,monthlyHOA:0,rateType:"fixed30",dscrRatio:1.35,rentalType:"longterm"},
+  {id:"ZW-2606",name:"Ana Gutierrez",email:"ana.g@freelance.com",phone:"(954) 555-2345",entity:"Individual",propAddr:"845 Emerson Dr NE, Palm Bay, FL 32907",propType:"Single Family",purpose:"Bank Statement Purchase",loanType:"nodoc",purchasePrice:320000,loanAmt:256000,arv:320000,repairBudget:0,experience:"1-3 Deals",credit:"700-719",liquid:180000,condition:"Good",term:"360",status:"pending",submitted:"2026-03-05",uploads:3,score:null,noDocSubtype:"bankstatement",avgMonthlyDeposits:12500,statementPeriod:"24",occupancy:"primary"},
 ];
 
 function runLocalUnderwriting(app){
+  if(app.loanType==="dscr") return runDSCRUnderwriting(app);
+  if(app.loanType==="nodoc") return runNoDocUnderwriting(app);
+  return runHardMoneyUnderwriting(app);
+}
+
+function runDSCRUnderwriting(app){
+  const ltv=app.purchasePrice>0?((app.loanAmt/app.purchasePrice)*100):0;
+  const dscr=app.dscrRatio||0;
+  const creditMap={"720+":20,"700-719":17,"680-719":15,"660-679":12,"640-659":8,"620-639":5,"below600":2};
+  const expMap={"25+":5,"11-25":4,"4-10":3,"1-3":2,"first":1};
+  let score=0;
+  // DSCR ratio (30pt)
+  if(dscr>=1.25)score+=30;else if(dscr>=1.1)score+=24;else if(dscr>=1.0)score+=18;else if(dscr>=0.75)score+=10;else score+=3;
+  // Credit (20pt)
+  score+=(creditMap[app.credit]||10);
+  // LTV (20pt)
+  if(ltv<=65)score+=20;else if(ltv<=70)score+=17;else if(ltv<=75)score+=14;else if(ltv<=80)score+=10;else score+=3;
+  // Reserves (15pt)
+  const reserveMonths=app.liquid>0&&app.loanAmt>0?Math.floor(app.liquid/(app.loanAmt/12)):0;
+  if(reserveMonths>=12)score+=15;else if(reserveMonths>=6)score+=12;else if(reserveMonths>=3)score+=8;else score+=3;
+  // Property (5pt)
+  score+=({"sfr":5,"duplex":4,"triplex":4,"fourplex":4,"condo":3}[app.propType]||3);
+  // Experience (5pt)
+  score+=(expMap[app.experience]||2);
+  // Docs (5pt)
+  if(app.uploads>=5)score+=5;else if(app.uploads>=3)score+=3;else score+=1;
+  score=Math.min(score,100);
+  const verdict=score>=82?"APPROVE":score>=68?"CONDITIONAL_APPROVE":score>=50?"REVIEW":"DECLINE";
+  const rate=dscr>=1.25&&app.credit==="720+"?"6.25%":dscr>=1.1?"7.0%":dscr>=1.0?"7.75%":"8.5%";
+  const strengths=[],risks=[],conditions=["Full appraisal with Form 1007 rent schedule required","Lease agreements or market rent analysis verification","Title search, title insurance, and hazard insurance required","Property insurance with lender as loss payee"];
+  if(dscr>=1.25)strengths.push(`Strong DSCR of ${dscr.toFixed(2)}x — rental income covers debt by ${((dscr-1)*100).toFixed(0)}% margin`);
+  if(dscr>=1.0&&dscr<1.25)strengths.push(`DSCR of ${dscr.toFixed(2)}x meets minimum threshold — property cash flows positively`);
+  if(app.credit==="720+")strengths.push("Excellent credit (720+) qualifies for best available DSCR rates");
+  if(ltv<=75)strengths.push(`Conservative LTV at ${ltv.toFixed(1)}% provides strong equity cushion`);
+  if(reserveMonths>=6)strengths.push(`${reserveMonths} months of reserves demonstrate strong liquidity`);
+  if(app.rentalType==="longterm")strengths.push("Long-term rental strategy provides predictable, stable income stream");
+  if(dscr<1.0)risks.push(`Negative cash flow — DSCR ${dscr.toFixed(2)}x means property doesn't cover its debt service. Higher down payment or rate adjustment required`);
+  if(dscr>=1.0&&dscr<1.1)risks.push(`Thin cash flow margin — DSCR ${dscr.toFixed(2)}x leaves minimal buffer for vacancy or expense increases`);
+  if(ltv>75)risks.push(`LTV at ${ltv.toFixed(1)}% exceeds preferred 75% — reduced equity cushion increases lender exposure`);
+  if(reserveMonths<6)risks.push(`Only ${reserveMonths} months reserves — recommend 6+ months for DSCR loans`);
+  if(risks.length<1)risks.push("Market rent fluctuations could impact DSCR over the loan term");
+  if(dscr<1.0)conditions.push("Additional 5-10% down payment required for sub-1.0 DSCR");
+  if(app.rentalType==="shortterm")conditions.push("Short-term rental income requires 12-month operating history documentation");
+  return {score,verdict,verdict_summary:verdict==="APPROVE"?`Strong DSCR deal — ${dscr.toFixed(2)}x coverage with ${app.credit} credit and ${ltv.toFixed(0)}% LTV. Recommended for funding at competitive rates.`:verdict==="CONDITIONAL_APPROVE"?`DSCR of ${dscr.toFixed(2)}x is acceptable with conditions. ${ltv.toFixed(0)}% LTV within range.`:verdict==="REVIEW"?`DSCR metrics require review — ${dscr.toFixed(2)}x coverage and ${ltv.toFixed(0)}% LTV need restructuring.`:`DSCR below minimum thresholds. Consider higher down payment or property with stronger rental income.`,
+    approval_probability:Math.min(Math.max(score+Math.floor(Math.random()*6)-3,5),98),recommended_rate:rate,recommended_ltv_cap:score>=80?"80%":score>=65?"75%":"70%",recommended_term:"30 years fixed",
+    strengths:strengths.slice(0,4),risks:risks.slice(0,3),conditions:conditions.slice(0,4),
+    deal_summary:`DSCR ${app.propType} at ${app.propAddr} — $${app.purchasePrice?.toLocaleString()} purchase, $${app.monthlyRent?.toLocaleString()}/mo rent, ${dscr.toFixed(2)}x DSCR. ${ltv.toFixed(0)}% LTV with ${app.rateType==="fixed30"?"30-year fixed":"ARM"} structure.`,
+    exit_viability:`Long-term hold with ${dscr.toFixed(2)}x DSCR provides ${dscr>=1.25?"strong":"adequate"} ongoing cash flow. Property generates $${app.monthlyRent?.toLocaleString()}/mo against estimated debt service.`,
+    market_commentary:`Rental market in ${app.propAddr.includes("FL")?"Florida":"the local area"} shows strong fundamentals. ${app.propType} properties in this submarket maintain competitive occupancy rates and stable rent growth supporting the DSCR underwrite.`
+  };
+}
+
+function runNoDocUnderwriting(app){
+  const ltv=app.purchasePrice>0?((app.loanAmt/app.purchasePrice)*100):0;
+  const downPct=app.purchasePrice>0?((1-app.loanAmt/app.purchasePrice)*100):0;
+  const creditMap={"720+":25,"700-719":20,"680-719":15,"660-679":10,"640-659":6,"620-639":3,"below600":1};
+  let score=0;
+  // Credit (25pt)
+  score+=(creditMap[app.credit]||10);
+  // LTV (20pt)
+  if(ltv<=65)score+=20;else if(ltv<=70)score+=17;else if(ltv<=75)score+=14;else if(ltv<=80)score+=10;else score+=3;
+  // Assets/Reserves (20pt)
+  const reserveMonths=app.liquid>0&&app.loanAmt>0?Math.floor(app.liquid/(app.loanAmt/12)):0;
+  if(reserveMonths>=24)score+=20;else if(reserveMonths>=12)score+=15;else if(reserveMonths>=6)score+=10;else score+=4;
+  // Down payment (15pt)
+  if(downPct>=30)score+=15;else if(downPct>=25)score+=12;else if(downPct>=20)score+=9;else if(downPct>=15)score+=6;else score+=3;
+  // Doc level (10pt)
+  const docMap={bankstatement:app.statementPeriod==="24"?10:8,asset_depletion:8,profit_loss:6,stated_income:4,nina:2};
+  score+=(docMap[app.noDocSubtype]||5);
+  // Occupancy (5pt)
+  score+=({"investment":5,"primary":4,"second":3}[app.occupancy]||3);
+  // Property (5pt)
+  score+=({"sfr":5,"duplex":4,"triplex":4,"fourplex":4,"condo":3}[app.propType]||3);
+  score=Math.min(score,100);
+  const verdict=score>=80?"APPROVE":score>=65?"CONDITIONAL_APPROVE":score>=50?"REVIEW":"DECLINE";
+  const subtypeLabel={bankstatement:"Bank Statement",asset_depletion:"Asset Depletion",profit_loss:"P&L Only",stated_income:"Stated Income",nina:"NINA"}[app.noDocSubtype]||"No-Doc";
+  const rate=score>=80?"7.5%":score>=65?"8.5%":score>=50?"9.5%":"10.5%";
+  const strengths=[],risks=[],conditions=["Property appraisal by approved appraiser required","Proof of down payment funds required","Title search, title insurance, and hazard insurance required"];
+  if(app.credit==="720+"||app.credit==="700-719")strengths.push(`Strong credit profile (${app.credit}) compensates for reduced documentation`);
+  if(downPct>=25)strengths.push(`Substantial ${downPct.toFixed(0)}% down payment reduces lender exposure significantly`);
+  if(reserveMonths>=12)strengths.push(`${reserveMonths} months reserves demonstrate strong financial position`);
+  if(app.noDocSubtype==="bankstatement")strengths.push(`${app.statementPeriod}-month bank statement program provides income verification through deposit history`);
+  if(app.avgMonthlyDeposits>0)strengths.push(`Average monthly deposits of $${app.avgMonthlyDeposits?.toLocaleString()} support repayment ability`);
+  if(ltv<=70)strengths.push(`Conservative LTV at ${ltv.toFixed(1)}% provides strong equity cushion for non-QM product`);
+  if(app.credit==="640-659"||app.credit==="620-639"||app.credit==="below600")risks.push(`Credit score (${app.credit}) below preferred threshold for no-doc product — higher rate and larger down payment required`);
+  if(ltv>75)risks.push(`LTV at ${ltv.toFixed(1)}% is elevated for a no-doc product — recommend restructuring to 75% or below`);
+  if(downPct<20)risks.push(`Down payment of ${downPct.toFixed(0)}% below 20% minimum for most no-doc programs`);
+  if(app.noDocSubtype==="nina")risks.push("NINA program has highest risk profile — no income or asset verification. Strictest terms apply");
+  if(app.noDocSubtype==="stated_income")risks.push("Stated income not independently verified — lender relies on borrower declaration");
+  if(risks.length<1)risks.push("Non-QM products carry inherently higher risk premium vs conventional financing");
+  if(app.noDocSubtype==="bankstatement"){conditions.push(`${app.statementPeriod} months personal or business bank statements required`);if(app.statementPeriod==="12")conditions.push("CPA letter required for 12-month bank statement program");}
+  if(app.noDocSubtype==="asset_depletion")conditions.push("60-day asset statements from all accounts used for qualification");
+  if(app.noDocSubtype==="nina"&&app.occupancy!=="investment")conditions.push("⚠️ NINA only available for investment properties — occupancy must be changed");
+  return {score,verdict,verdict_summary:verdict==="APPROVE"?`${subtypeLabel} program approved — ${app.credit} credit with ${downPct.toFixed(0)}% down and ${ltv.toFixed(0)}% LTV meets all thresholds.`:verdict==="CONDITIONAL_APPROVE"?`${subtypeLabel} application conditionally approved pending documentation. ${ltv.toFixed(0)}% LTV acceptable with conditions.`:verdict==="REVIEW"?`${subtypeLabel} application requires additional review. Some metrics fall outside standard no-doc parameters.`:`${subtypeLabel} application does not meet minimum no-doc thresholds. Consider alternative program or restructuring.`,
+    approval_probability:Math.min(Math.max(score+Math.floor(Math.random()*6)-3,5),98),recommended_rate:rate,recommended_ltv_cap:score>=80?"80%":"75%",recommended_term:"30 years fixed",
+    strengths:strengths.slice(0,4),risks:risks.slice(0,3),conditions:conditions.slice(0,4),
+    deal_summary:`${subtypeLabel} ${app.propType} at ${app.propAddr} — $${app.purchasePrice?.toLocaleString()} purchase at ${ltv.toFixed(0)}% LTV. ${app.occupancy==="primary"?"Owner-occupied":"Investment"} property. ${app.avgMonthlyDeposits?`$${app.avgMonthlyDeposits?.toLocaleString()}/mo avg deposits.`:""}`,
+    exit_viability:`${app.occupancy==="primary"?"Primary residence — standard mortgage exit via refinance to conventional when documentation becomes available.":"Investment property — rental income supports ongoing debt service with eventual refinance to DSCR or conventional product."}`,
+    market_commentary:`${app.propAddr.includes("FL")?"Florida":"Local"} real estate market supports ${app.occupancy==="primary"?"owner-occupied":"investment"} acquisitions. ${app.propType} values in this area show stability with moderate appreciation trends.`
+  };
+}
+
+function runHardMoneyUnderwriting(app){
   const ltv=app.purchasePrice>0?((app.loanAmt/app.purchasePrice)*100):0;
   const arvLtv=app.arv>0?((app.loanAmt/app.arv)*100):0;
   const profit=(app.arv||0)-(app.purchasePrice||0)-(app.repairBudget||0);
@@ -129,7 +234,11 @@ function ApplicantPortal({onSwitch}){
   const [step,setStep]=useState(1);
   const [form,setForm]=useState({loanType:"hardmoney",firstName:"",lastName:"",email:"",phone:"",entityType:"llc",entityName:"",entityState:"FL",mailAddr:"",mailCity:"",mailState:"FL",mailZip:"",citizenship:"us",propAddr:"",propCity:"",propState:"FL",propZip:"",propType:"sfr",occupancy:"investment",beds:"",baths:"",sqft:"",yearBuilt:"",condition:"fair",purpose:"purchase",purchasePrice:"",loanAmt:"",arv:"",repairBudget:"",loanTerm:"12",downPmt:"",exitStrategy:[],exitNotes:"",projectDesc:"",experience:"4-10",propsOwned:"",creditScore:"720+",liquid:"",bkHist:"none",liens:"none",gc:"self",addNotes:"",
     // Construction fields
-    constructionType:"ground_up",lotValue:"",hardCosts:"",softCosts:"",totalConstructionBudget:"",numDraws:"5",permitStatus:"not_applied",plansStatus:"in_progress",gcContract:"signed",constructionTimeline:"12",interestReserve:"",completedValue:""
+    constructionType:"ground_up",lotValue:"",hardCosts:"",softCosts:"",totalConstructionBudget:"",numDraws:"5",permitStatus:"not_applied",plansStatus:"in_progress",gcContract:"signed",constructionTimeline:"12",interestReserve:"",completedValue:"",
+    // DSCR fields
+    monthlyRent:"",vacancyRate:"5",annualTaxes:"",annualInsurance:"",monthlyHOA:"",rateType:"fixed30",prepayment:"3yr",rentalType:"longterm",rentVerification:"lease",
+    // No-Doc fields
+    noDocSubtype:"bankstatement",employmentStatus:"self_employed",businessName:"",industry:"",yearsInBusiness:"",statementPeriod:"24",accountType:"business",avgMonthlyDeposits:"",cpaLetter:"no",totalLiquidAssets:"",retirementAssets:"",investAssets:""
   });
   const [uploads,setUploads]=useState([]);
   const [submitted,setSubmitted]=useState(false);
@@ -153,7 +262,7 @@ function ApplicantPortal({onSwitch}){
     </div>
   );
 
-  const labels=["Borrower","Property",form.loanType==="construction"?"Construction Budget":"Loan Details","Plans & Docs","Experience","Review"];
+  const labels=["Borrower","Property",{hardmoney:"Loan Details",construction:"Construction Budget",dscr:"Rental Income & DSCR",nodoc:"Income Verification"}[form.loanType]||"Loan Details","Plans & Docs","Experience","Review"];
   const RadioGroup=({name,value,options,onChange})=>(<div style={{display:"grid",gridTemplateColumns:`repeat(${options.length},1fr)`,gap:8}}>{options.map(([v,l])=>(<label key={v} style={{cursor:"pointer"}}><input type="radio" name={name} checked={value===v} onChange={()=>onChange(v)} style={{display:"none"}} /><div style={{padding:"10px",borderRadius:8,fontSize:13,fontWeight:value===v?600:500,border:`1.5px solid ${value===v?B.navy:B.s200}`,background:value===v?"rgba(30,58,95,0.04)":"#fff",color:value===v?B.navy:B.s700,textAlign:"center",transition:"all 0.2s"}}>{l}</div></label>))}</div>);
   const CheckGroup=({values,options,onChange})=>(<div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(options.length,4)},1fr)`,gap:8}}>{options.map(([v,l])=>(<label key={v} style={{cursor:"pointer"}}><input type="checkbox" checked={values.includes(v)} onChange={e=>onChange(e.target.checked?[...values,v]:values.filter(x=>x!==v))} style={{display:"none"}} /><div style={{padding:"10px",borderRadius:8,fontSize:13,fontWeight:values.includes(v)?600:500,border:`1.5px solid ${values.includes(v)?B.navy:B.s200}`,background:values.includes(v)?"rgba(30,58,95,0.04)":"#fff",color:values.includes(v)?B.navy:B.s700,textAlign:"center"}}>{l}</div></label>))}</div>);
   const Sep=()=><div style={{borderTop:`1px solid ${B.s200}`,margin:"16px 0"}} />;
@@ -168,7 +277,7 @@ function ApplicantPortal({onSwitch}){
           <Logo /><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:B.s400,fontSize:11,maxWidth:150,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email}</span><Btn variant="ghost" onClick={signOut} style={{color:B.s400,borderColor:"rgba(255,255,255,0.15)",fontSize:11}}>Sign Out</Btn><Btn variant="ghost" onClick={onSwitch} style={{color:B.s400,borderColor:"rgba(255,255,255,0.15)",fontSize:11}}>🔐 Admin</Btn></div>
         </div>
         <div style={{padding:"28px 32px 36px",position:"relative",zIndex:1}}>
-          <h1 style={{fontFamily:"'Fraunces',Georgia,serif",fontSize:28,fontWeight:800,color:"#fff",marginBottom:4}}>{form.loanType==="construction"?"Ground-Up Construction Loan Application":"Hard Money Loan Application"}</h1>
+          <h1 style={{fontFamily:"'Fraunces',Georgia,serif",fontSize:28,fontWeight:800,color:"#fff",marginBottom:4}}>{{hardmoney:"Hard Money Loan Application",construction:"Ground-Up Construction Loan Application",dscr:"DSCR Rental Loan Application",nodoc:"No-Doc Loan Application"}[form.loanType]}</h1>
           <p style={{color:B.s400,fontSize:13,maxWidth:560}}>Complete your application and upload project materials. Our AI engine generates underwriting analysis and a pitch deck for lender submission.</p>
           <div style={{display:"flex",gap:12,marginTop:16,flexWrap:"wrap"}}><Badge icon="🤖" text="AI Underwriting" /><Badge icon="📊" text="Auto Pitch Deck" /><Badge icon="🔒" text="Bank-Grade Security" /></div>
         </div>
@@ -177,7 +286,7 @@ function ApplicantPortal({onSwitch}){
       {/* LOAN TYPE SELECTOR */}
       <div style={{background:B.navyDeep,padding:"0 32px",borderBottom:`1px solid rgba(255,255,255,0.08)`}}>
         <div style={{display:"flex",gap:4,maxWidth:880,margin:"0 auto"}}>
-          {[["hardmoney","🏠 Hard Money Loan","Fix & flip, bridge, investment"],["construction","🏗️ Construction Loan","Ground-up, tear-down, major reno"]].map(([v,label,sub])=>(
+          {[["hardmoney","🏠 Hard Money","Fix & flip, bridge, invest"],["construction","🏗️ Construction","Ground-up, major reno"],["dscr","📈 DSCR Loan","Rental income, investors"],["nodoc","📋 No-Doc Loan","Self-employed, bank stmt"]].map(([v,label,sub])=>(
             <button key={v} onClick={()=>{u("loanType",v);setStep(1)}} style={{
               padding:"14px 24px",cursor:"pointer",border:"none",fontFamily:"'Plus Jakarta Sans',sans-serif",
               background:form.loanType===v?"rgba(245,158,11,0.12)":"transparent",
@@ -222,7 +331,7 @@ function ApplicantPortal({onSwitch}){
           <Grid><Field label="Year Built"><input style={is} type="number" value={form.yearBuilt} onChange={e=>u("yearBuilt",e.target.value)} /></Field><Field label="Condition"><select style={is} value={form.condition} onChange={e=>u("condition",e.target.value)}><option value="excellent">Excellent</option><option value="good">Good</option><option value="fair">Fair</option><option value="poor">Poor</option><option value="distressed">Distressed</option></select></Field></Grid>
         </div></Card><div style={{display:"flex",justifyContent:"space-between",marginTop:20}}><Btn variant="back" onClick={()=>setStep(1)}>← Back</Btn><Btn onClick={()=>setStep(3)}>Continue → Loan Details</Btn></div></div>}
 
-        {step===3&&<div><Card><CardHead title={form.loanType==="construction"?"Construction Loan Request":"Loan Request"} sub={form.loanType==="construction"?"Ground-up or major renovation financing details":"Financing structure and exit strategy"} /><div style={{padding:"8px 24px 24px"}}>
+        {step===3&&<div><Card><CardHead title={{hardmoney:"Loan Request",construction:"Construction Loan Request",dscr:"Rental Income & DSCR",nodoc:"Income Verification Program"}[form.loanType]} sub={{hardmoney:"Financing structure and exit strategy",construction:"Ground-up or major renovation financing details",dscr:"Property cash flow qualifies you — no personal income needed",nodoc:"Alternative documentation for self-employed and non-traditional income"}[form.loanType]} /><div style={{padding:"8px 24px 24px"}}>
           {form.loanType==="hardmoney"?<>
             <Field label="Loan Purpose" required><RadioGroup name="purpose" value={form.purpose} options={[["purchase","Purchase"],["refinance","Refinance"],["cashout","Cash-Out"],["bridge","Bridge"]]} onChange={v=>u("purpose",v)} /></Field>
             <Sep />
@@ -232,8 +341,104 @@ function ApplicantPortal({onSwitch}){
             <Sep />
             <Field label="Exit Strategy"><CheckGroup values={form.exitStrategy} options={[["flip","Fix & Flip"],["refi","Refi to Perm"],["rental","Hold Rental"],["other","Other"]]} onChange={v=>u("exitStrategy",v)} /></Field>
             <Field label="Exit Notes"><textarea style={{...is,minHeight:70,resize:"vertical"}} value={form.exitNotes} onChange={e=>u("exitNotes",e.target.value)} placeholder="Timeline, comps, projections…" /></Field>
+
+          </>:form.loanType==="dscr"?<>
+            {/* ═══ DSCR LOAN FIELDS ═══ */}
+            <div style={{background:"rgba(16,185,129,0.06)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:700,color:B.navyDeep,marginBottom:4}}>📈 DSCR = Rental Income ÷ Debt Service</div>
+              <div style={{fontSize:11,color:B.s600}}>No W-2s, no tax returns, no pay stubs — your property's rental income qualifies you for this loan</div>
+            </div>
+            <Field label="Loan Purpose" required><RadioGroup name="purpose" value={form.purpose} options={[["purchase","Purchase"],["refinance","Rate/Term Refi"],["cashout","Cash-Out Refi"]]} onChange={v=>u("purpose",v)} /></Field>
+            <Sep />
+            <Grid><CurField label="Purchase Price / Appraised Value" required value={form.purchasePrice} onChange={v=>u("purchasePrice",v)} /><CurField label="Loan Amount Requested" required value={form.loanAmt} onChange={v=>u("loanAmt",v)} /></Grid>
+            <Grid><CurField label="Down Payment / Equity" required value={form.downPmt} onChange={v=>u("downPmt",v)} /><Field label="Rate Type" required><select style={is} value={form.rateType} onChange={e=>u("rateType",e.target.value)}><option value="fixed30">30-Year Fixed</option><option value="arm51">5/1 ARM</option><option value="arm71">7/1 ARM</option><option value="fixed40">40-Year Fixed</option></select></Field></Grid>
+            <Sep />
+            <div style={{fontWeight:700,fontSize:14,color:B.navyDeep,marginBottom:12}}>🏠 Rental Income</div>
+            <Grid><CurField label="Monthly Gross Rent" required hint="Actual rent or projected market rent" value={form.monthlyRent} onChange={v=>u("monthlyRent",v)} /><Field label="Rental Type" required><select style={is} value={form.rentalType} onChange={e=>u("rentalType",e.target.value)}><option value="longterm">Long-Term (12+ mo lease)</option><option value="shortterm">Short-Term (Airbnb/VRBO)</option><option value="midterm">Mid-Term (1-11 months)</option></select></Field></Grid>
+            <Grid><Field label="Rent Verification" required><select style={is} value={form.rentVerification} onChange={e=>u("rentVerification",e.target.value)}><option value="lease">Current Lease Agreement</option><option value="market">Market Rent Analysis</option><option value="both">Both — Lease + Comps</option></select></Field><Field label="Vacancy Rate"><select style={is} value={form.vacancyRate} onChange={e=>u("vacancyRate",e.target.value)}><option value="0">0% (Occupied)</option><option value="5">5% (Standard)</option><option value="10">10% (Conservative)</option><option value="15">15% (High Vacancy Area)</option></select></Field></Grid>
+            <Sep />
+            <div style={{fontWeight:700,fontSize:14,color:B.navyDeep,marginBottom:12}}>💰 Monthly Debt Service (PITIA)</div>
+            <Grid><CurField label="Annual Property Taxes" required value={form.annualTaxes} onChange={v=>u("annualTaxes",v)} /><CurField label="Annual Insurance Premium" required value={form.annualInsurance} onChange={v=>u("annualInsurance",v)} /></Grid>
+            <Grid><CurField label="Monthly HOA Fees" hint="Enter 0 if none" value={form.monthlyHOA} onChange={v=>u("monthlyHOA",v)} /><Field label="Prepayment Preference"><select style={is} value={form.prepayment} onChange={e=>u("prepayment",e.target.value)}><option value="none">No Prepayment Penalty</option><option value="3yr">3-Year Prepayment</option><option value="5yr">5-Year Prepayment</option></select></Field></Grid>
+            {/* DSCR Auto-Calculator */}
+            {(()=>{
+              const rent=pC(form.monthlyRent);const tax=pC(form.annualTaxes)/12;const ins=pC(form.annualInsurance)/12;const hoa=pC(form.monthlyHOA);
+              const loanVal=pC(form.loanAmt);const estRate=0.07;const monthlyPI=loanVal>0?(loanVal*(estRate/12)*Math.pow(1+estRate/12,360))/(Math.pow(1+estRate/12,360)-1):0;
+              const pitia=monthlyPI+tax+ins+hoa;const dscr=pitia>0?rent/pitia:0;
+              return rent>0&&pitia>0?(
+                <div style={{background:`linear-gradient(135deg,${B.navyDeep},${B.navy})`,borderRadius:12,padding:20,marginTop:16,color:"#fff"}}>
+                  <div style={{fontSize:12,fontWeight:700,color:B.orangeLight,marginBottom:12,textTransform:"uppercase",letterSpacing:1}}>📊 Live DSCR Calculator</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:16,alignItems:"center"}}>
+                    <div>
+                      <div style={{fontSize:11,color:B.s400}}>Monthly Rent</div>
+                      <div style={{fontSize:20,fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>${rent.toLocaleString()}</div>
+                    </div>
+                    <div style={{fontSize:24,color:B.s400}}>÷</div>
+                    <div>
+                      <div style={{fontSize:11,color:B.s400}}>PITIA</div>
+                      <div style={{fontSize:20,fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>${Math.round(pitia).toLocaleString()}</div>
+                      <div style={{fontSize:10,color:B.s400}}>P&I: ${Math.round(monthlyPI).toLocaleString()} + Tax: ${Math.round(tax).toLocaleString()} + Ins: ${Math.round(ins).toLocaleString()}{hoa>0?` + HOA: $${hoa.toLocaleString()}`:""}</div>
+                    </div>
+                  </div>
+                  <div style={{textAlign:"center",marginTop:16,padding:"14px 20px",background:"rgba(255,255,255,0.06)",borderRadius:10,border:"1px solid rgba(255,255,255,0.08)"}}>
+                    <div style={{fontSize:11,textTransform:"uppercase",letterSpacing:1.5,color:B.s400,marginBottom:4}}>Your DSCR Ratio</div>
+                    <div style={{fontSize:36,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",color:dscr>=1.25?B.green:dscr>=1.0?B.orangeLight:B.red}}>{dscr.toFixed(2)}x</div>
+                    <div style={{fontSize:12,color:dscr>=1.25?B.green:dscr>=1.0?B.orangeLight:B.red,fontWeight:600,marginTop:4}}>
+                      {dscr>=1.25?"✅ Strong Cash Flow — Best Rates":dscr>=1.0?"⚡ Break-Even — Standard Terms":dscr>=0.75?"⚠️ Negative Cash Flow — Restricted Terms":"❌ Below Minimum — May Not Qualify"}
+                    </div>
+                  </div>
+                </div>
+              ):null;
+            })()}
+
+          </>:form.loanType==="nodoc"?<>
+            {/* ═══ NO-DOC LOAN FIELDS ═══ */}
+            <div style={{background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:700,color:B.navyDeep,marginBottom:4}}>📋 No Tax Returns • No W-2s • No Pay Stubs</div>
+              <div style={{fontSize:11,color:B.s600}}>Qualify through bank statements, assets, or stated income — designed for self-employed and non-traditional earners</div>
+            </div>
+            <Field label="No-Doc Program Type" required>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {[["bankstatement","🏦 Bank Statement","12-24 mo deposits"],["asset_depletion","💎 Asset Depletion","Liquid assets qualify"],["profit_loss","📊 P&L Only","CPA profit & loss"],["nina","🔒 NINA","No income, no assets"]].map(([v,label,sub])=>(
+                  <label key={v} style={{cursor:"pointer"}}><input type="radio" name="ndtype" checked={form.noDocSubtype===v} onChange={()=>u("noDocSubtype",v)} style={{display:"none"}} />
+                    <div style={{padding:"12px 14px",borderRadius:8,border:`1.5px solid ${form.noDocSubtype===v?B.navy:B.s200}`,background:form.noDocSubtype===v?"rgba(30,58,95,0.04)":"#fff",transition:"all 0.2s"}}>
+                      <div style={{fontSize:13,fontWeight:form.noDocSubtype===v?700:500,color:form.noDocSubtype===v?B.navy:B.s700}}>{label}</div>
+                      <div style={{fontSize:10,color:B.s400,marginTop:2}}>{sub}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </Field>
+            <Sep />
+            <Field label="Loan Purpose" required><RadioGroup name="purpose" value={form.purpose} options={[["purchase","Purchase"],["refinance","Rate/Term Refi"],["cashout","Cash-Out Refi"]]} onChange={v=>u("purpose",v)} /></Field>
+            <Grid><CurField label="Purchase Price / Value" required value={form.purchasePrice} onChange={v=>u("purchasePrice",v)} /><CurField label="Loan Amount" required value={form.loanAmt} onChange={v=>u("loanAmt",v)} /></Grid>
+            <Grid><CurField label="Down Payment / Equity" required value={form.downPmt} onChange={v=>u("downPmt",v)} /><Field label="Loan Term"><select style={is} value={form.loanTerm} onChange={e=>u("loanTerm",e.target.value)}><option value="360">30-Year Fixed</option><option value="180">15-Year Fixed</option><option value="arm">ARM</option></select></Field></Grid>
+            <Sep />
+            <div style={{fontWeight:700,fontSize:14,color:B.navyDeep,marginBottom:12}}>👤 Employment & Income</div>
+            <Grid><Field label="Employment Status" required><select style={is} value={form.employmentStatus} onChange={e=>u("employmentStatus",e.target.value)}><option value="self_employed">Self-Employed</option><option value="1099">1099 Contractor</option><option value="business_owner">Business Owner</option><option value="retired">Retired</option><option value="w2">W-2 Employee</option><option value="none">Not Employed</option></select></Field><Field label="Years in Business/Employment"><input style={is} type="number" value={form.yearsInBusiness} onChange={e=>u("yearsInBusiness",e.target.value)} min="0" placeholder="Years" /></Field></Grid>
+            {(form.employmentStatus==="self_employed"||form.employmentStatus==="business_owner"||form.employmentStatus==="1099")&&<Grid><Field label="Business Name"><input style={is} value={form.businessName} onChange={e=>u("businessName",e.target.value)} placeholder="Company name" /></Field><Field label="Industry"><input style={is} value={form.industry} onChange={e=>u("industry",e.target.value)} placeholder="e.g. Real Estate, Tech, Consulting" /></Field></Grid>}
+            <Sep />
+            {form.noDocSubtype==="bankstatement"&&<>
+              <div style={{fontWeight:700,fontSize:14,color:B.navyDeep,marginBottom:12}}>🏦 Bank Statement Details</div>
+              <Grid><Field label="Statement Period" required><select style={is} value={form.statementPeriod} onChange={e=>u("statementPeriod",e.target.value)}><option value="24">24 Months (Better Rates)</option><option value="12">12 Months</option></select></Field><Field label="Account Type" required><select style={is} value={form.accountType} onChange={e=>u("accountType",e.target.value)}><option value="business">Business Account</option><option value="personal">Personal Account</option></select></Field></Grid>
+              <Grid><CurField label="Average Monthly Deposits" required hint="Average across statement period" value={form.avgMonthlyDeposits} onChange={v=>u("avgMonthlyDeposits",v)} /><Field label="CPA Letter Available?" required><select style={is} value={form.cpaLetter} onChange={e=>u("cpaLetter",e.target.value)}><option value="yes">Yes — CPA Letter Available</option><option value="no">No</option></select></Field></Grid>
+            </>}
+            {form.noDocSubtype==="asset_depletion"&&<>
+              <div style={{fontWeight:700,fontSize:14,color:B.navyDeep,marginBottom:12}}>💎 Asset Details</div>
+              <Grid><CurField label="Total Liquid Assets" required hint="Cash, savings, checking" value={form.totalLiquidAssets} onChange={v=>u("totalLiquidAssets",v)} /><CurField label="Investment / Brokerage" hint="Stocks, bonds, mutual funds" value={form.investAssets} onChange={v=>u("investAssets",v)} /></Grid>
+              <Grid><CurField label="Retirement Accounts" hint="IRA, 401k (60% counted)" value={form.retirementAssets} onChange={v=>u("retirementAssets",v)} /><div></div></Grid>
+            </>}
+            {form.noDocSubtype==="profit_loss"&&<>
+              <div style={{fontWeight:700,fontSize:14,color:B.navyDeep,marginBottom:12}}>📊 P&L Details</div>
+              <Grid><CurField label="Average Monthly Revenue" required value={form.avgMonthlyDeposits} onChange={v=>u("avgMonthlyDeposits",v)} /><Field label="CPA-Prepared P&L Available?" required><select style={is} value={form.cpaLetter} onChange={e=>u("cpaLetter",e.target.value)}><option value="yes">Yes</option><option value="no">No — Not Yet</option></select></Field></Grid>
+            </>}
+            {form.noDocSubtype==="nina"&&<div style={{background:"rgba(245,158,11,0.08)",border:`1px solid ${B.orange}40`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#92400e"}}>⚠️ NINA — Investment Properties Only</div>
+              <div style={{fontSize:11,color:B.s600,marginTop:4}}>No income or asset verification. Qualification based on credit, property, and down payment. Higher rates and larger down payment required. Must be investment property.</div>
+            </div>}
+
           </>:<>
-            {/* CONSTRUCTION LOAN FIELDS */}
+            {/* CONSTRUCTION LOAN FIELDS (existing) */}
             <Field label="Construction Type" required><RadioGroup name="constType" value={form.constructionType} options={[["ground_up","Ground-Up New Build"],["tear_down","Tear-Down & Rebuild"],["major_reno","Major Renovation"]]} onChange={v=>u("constructionType",v)} /></Field>
             <Sep />
             <div style={{background:B.orangeGlow,border:`1px solid ${B.orange}40`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
@@ -292,13 +497,19 @@ function ApplicantPortal({onSwitch}){
         </div></Card><div style={{display:"flex",justifyContent:"space-between",marginTop:20}}><Btn variant="back" onClick={()=>setStep(4)}>← Back</Btn><Btn variant="orange" onClick={()=>setStep(6)}>Review & Submit →</Btn></div></div>}
 
         {step===6&&<div><Card><CardHead title="Application Summary" sub="Verify before submitting" /><div style={{padding:"8px 24px 24px"}}>
-          <div style={{background:form.loanType==="construction"?"rgba(245,158,11,0.08)":B.s50,borderRadius:10,padding:"10px 18px",border:`1px solid ${form.loanType==="construction"?B.orange+"40":B.s200}`,marginBottom:12,fontSize:13,fontWeight:600,color:B.navyDeep}}>{form.loanType==="construction"?"🏗️ Construction Loan Application":"🏠 Hard Money Loan Application"}</div>
+          <div style={{background:{hardmoney:B.s50,construction:"rgba(245,158,11,0.08)",dscr:"rgba(16,185,129,0.06)",nodoc:"rgba(99,102,241,0.06)"}[form.loanType],borderRadius:10,padding:"10px 18px",border:`1px solid ${{hardmoney:B.s200,construction:B.orange+"40",dscr:"rgba(16,185,129,0.2)",nodoc:"rgba(99,102,241,0.2)"}[form.loanType]}`,marginBottom:12,fontSize:13,fontWeight:600,color:B.navyDeep}}>{{hardmoney:"🏠 Hard Money Loan Application",construction:"🏗️ Construction Loan Application",dscr:"📈 DSCR Rental Loan Application",nodoc:"📋 No-Doc Loan Application"}[form.loanType]}</div>
           {[{icon:"👤",t:"Borrower",items:[["Name",`${form.firstName} ${form.lastName}`],["Email",form.email],["Phone",form.phone],["Entity",form.entityType==="individual"?"Individual":form.entityName]]},{icon:"🏠",t:"Property",items:[["Address",`${form.propAddr}, ${form.propCity}, ${form.propState} ${form.propZip}`],["Type",form.propType.toUpperCase()],["Condition",form.condition]]},
             ...(form.loanType==="construction"?[
               {icon:"🏗️",t:"Construction",items:[["Type",{ground_up:"Ground-Up New Build",tear_down:"Tear-Down & Rebuild",major_reno:"Major Renovation"}[form.constructionType]||form.constructionType],["Lot Value",form.lotValue?`$${form.lotValue}`:"—"],["Hard Costs",form.hardCosts?`$${form.hardCosts}`:"—"],["Soft Costs",form.softCosts?`$${form.softCosts}`:"—"],["Total Budget",form.totalConstructionBudget?`$${form.totalConstructionBudget}`:"—"],["Completed Value",form.completedValue?`$${form.completedValue}`:"—"],["Timeline",`${form.constructionTimeline} months`],["Draws",form.numDraws]]},
               {icon:"📋",t:"Readiness",items:[["Permits",{approved:"Approved",submitted:"Submitted",not_applied:"Not Applied",not_required:"N/A"}[form.permitStatus]||form.permitStatus],["Plans",{complete:"Complete & Stamped",in_progress:"In Progress",preliminary:"Preliminary",none:"None"}[form.plansStatus]||form.plansStatus],["GC Contract",{signed:"Signed",bidding:"Bidding",self:"Owner-Builder",none:"None"}[form.gcContract]||form.gcContract]]}
             ]:[]),
-            {icon:"💰",t:"Loan",items:[...(form.loanType==="hardmoney"?[["Purpose",form.purpose]]:[]),["Loan Amount",`$${form.loanAmt}`],...(form.loanType==="hardmoney"?[["Price/Value",`$${form.purchasePrice}`],["ARV",form.arv?`$${form.arv}`:"—"]]:[]),["Term",`${form.loanTerm} mo`],["Down Payment",form.downPmt?`$${form.downPmt}`:"—"]]},
+            ...(form.loanType==="dscr"?[
+              {icon:"📈",t:"DSCR Analysis",items:[["Monthly Rent",form.monthlyRent?`$${form.monthlyRent}`:"—"],["Rental Type",{longterm:"Long-Term",shortterm:"Short-Term",midterm:"Mid-Term"}[form.rentalType]||"—"],["Annual Taxes",form.annualTaxes?`$${form.annualTaxes}`:"—"],["Annual Insurance",form.annualInsurance?`$${form.annualInsurance}`:"—"],["Monthly HOA",form.monthlyHOA?`$${form.monthlyHOA}`:"$0"],["Rate Type",{fixed30:"30yr Fixed",arm51:"5/1 ARM",arm71:"7/1 ARM",fixed40:"40yr Fixed"}[form.rateType]||"—"],["Prepayment",form.prepayment],["Verification",{lease:"Current Lease",market:"Market Analysis",both:"Lease + Comps"}[form.rentVerification]||"—"]]}
+            ]:[]),
+            ...(form.loanType==="nodoc"?[
+              {icon:"📋",t:"No-Doc Program",items:[["Program",{bankstatement:"Bank Statement",asset_depletion:"Asset Depletion",profit_loss:"P&L Only",stated_income:"Stated Income",nina:"NINA"}[form.noDocSubtype]||"—"],["Employment",{self_employed:"Self-Employed",business_owner:"Business Owner","1099":"1099 Contractor",retired:"Retired",w2:"W-2",none:"Not Employed"}[form.employmentStatus]||"—"],...(form.noDocSubtype==="bankstatement"?[["Statement Period",`${form.statementPeriod} months`],["Avg Deposits",form.avgMonthlyDeposits?`$${form.avgMonthlyDeposits}/mo`:"—"],["Account Type",form.accountType==="business"?"Business":"Personal"],["CPA Letter",form.cpaLetter==="yes"?"Yes":"No"]]:[]),...(form.noDocSubtype==="asset_depletion"?[["Liquid Assets",form.totalLiquidAssets?`$${form.totalLiquidAssets}`:"—"],["Investments",form.investAssets?`$${form.investAssets}`:"—"],["Retirement",form.retirementAssets?`$${form.retirementAssets}`:"—"]]:[]),...(form.businessName?[["Business",form.businessName]]:[])]},
+            ]:[]),
+            {icon:"💰",t:"Loan",items:[...(form.loanType==="hardmoney"?[["Purpose",form.purpose]]:[]),["Loan Amount",`$${form.loanAmt}`],...(form.loanType==="hardmoney"?[["Price/Value",`$${form.purchasePrice}`],["ARV",form.arv?`$${form.arv}`:"—"]]:[]),...(form.loanType==="dscr"||form.loanType==="nodoc"?[["Price/Value",`$${form.purchasePrice}`]]:[]),["Term",form.loanType==="dscr"||form.loanType==="nodoc"?{fixed30:"30yr Fixed",arm51:"5/1 ARM",arm71:"7/1 ARM",fixed40:"40yr Fixed","360":"30yr","180":"15yr",arm:"ARM"}[form.rateType||form.loanTerm]||form.loanTerm:`${form.loanTerm} mo`],["Down Payment",form.downPmt?`$${form.downPmt}`:"—"]]},
             {icon:"📊",t:"Financials",items:[["Experience",form.experience],["Credit",form.creditScore],["Liquid",`$${form.liquid}`],["Uploads",`${uploads.length} files`]]}
           ].map(s=>(
             <div key={s.t} style={{background:B.s50,borderRadius:10,padding:18,border:`1px solid ${B.s200}`,marginBottom:12}}>
@@ -370,7 +581,7 @@ function AdminPortal({onSwitch}){
                 <tr key={a.id} onClick={()=>openApp(a)} style={{borderBottom:`1px solid ${B.s100}`,cursor:"pointer"}} onMouseEnter={e=>e.currentTarget.style.background=B.s50} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                   <td style={{padding:12,fontFamily:"'JetBrains Mono',monospace",fontWeight:600,color:B.navy,fontSize:12}}>{a.id}</td>
                   <td style={{padding:12}}><div style={{fontWeight:600}}>{a.name}</div><div style={{fontSize:11,color:B.s400}}>{a.entity}</div></td>
-                  <td style={{padding:12}}><span style={{padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,background:a.loanType==="construction"?B.orangeGlow:B.s100,color:a.loanType==="construction"?"#92400e":B.s600,border:`1px solid ${a.loanType==="construction"?B.orange+"40":B.s200}`}}>{a.loanType==="construction"?"🏗️ Construction":"🏠 Hard Money"}</span></td>
+                  <td style={{padding:12}}><span style={{padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,background:{construction:B.orangeGlow,dscr:"rgba(16,185,129,0.08)",nodoc:"rgba(99,102,241,0.08)"}[a.loanType]||B.s100,color:{construction:"#92400e",dscr:"#065f46",nodoc:"#4338ca"}[a.loanType]||B.s600,border:`1px solid ${{construction:B.orange+"40",dscr:"rgba(16,185,129,0.2)",nodoc:"rgba(99,102,241,0.2)"}[a.loanType]||B.s200}`}}>{{hardmoney:"🏠 Hard Money",construction:"🏗️ Construction",dscr:"📈 DSCR",nodoc:"📋 No-Doc"}[a.loanType]}</span></td>
                   <td style={{padding:12,fontSize:12,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.propAddr}</td>
                   <td style={{padding:12,fontFamily:"'JetBrains Mono',monospace",fontWeight:600}}>${(a.loanAmt/1000).toFixed(0)}K</td>
                   <td style={{padding:12,fontFamily:"'JetBrains Mono',monospace",fontWeight:600,color:parseFloat(ltv)<=75?B.green:B.amber}}>{ltv}%</td>
@@ -387,7 +598,7 @@ function AdminPortal({onSwitch}){
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
             <Btn variant="back" onClick={()=>{setView("dashboard");setSel(null)}} style={{padding:"6px 14px",fontSize:12}}>← Back</Btn>
             <h2 style={{fontFamily:"'Fraunces',Georgia,serif",fontSize:22,fontWeight:700,color:B.navyDeep,margin:0}}>Application {sel.id}</h2>
-            <span style={{padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,background:sel.loanType==="construction"?B.orangeGlow:B.s100,color:sel.loanType==="construction"?"#92400e":B.s600,border:`1px solid ${sel.loanType==="construction"?B.orange+"40":B.s200}`}}>{sel.loanType==="construction"?"🏗️ Construction":"🏠 Hard Money"}</span>
+            <span style={{padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,background:{construction:B.orangeGlow,dscr:"rgba(16,185,129,0.08)",nodoc:"rgba(99,102,241,0.08)"}[sel.loanType]||B.s100,color:{construction:"#92400e",dscr:"#065f46",nodoc:"#4338ca"}[sel.loanType]||B.s600,border:`1px solid ${{construction:B.orange+"40",dscr:"rgba(16,185,129,0.2)",nodoc:"rgba(99,102,241,0.2)"}[sel.loanType]||B.s200}`}}>{{hardmoney:"🏠 Hard Money",construction:"🏗️ Construction",dscr:"📈 DSCR",nodoc:"📋 No-Doc"}[sel.loanType]}</span>
             <StatusBadge status={sel.status} />
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
@@ -396,8 +607,21 @@ function AdminPortal({onSwitch}){
               <Card key={s.t}><div style={{padding:20}}><div style={{fontWeight:700,color:B.navyDeep,marginBottom:12,fontSize:14}}>{s.i} {s.t}</div>{s.items.map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 0",borderBottom:`1px solid ${B.s100}`}}><span style={{color:B.s400}}>{k}</span><strong>{v}</strong></div>)}</div></Card>
             ))}
           </div>
-          <Card><div style={{padding:20}}><div style={{fontWeight:700,color:B.navyDeep,marginBottom:14,fontSize:14}}>💰 {sel.loanType==="construction"?"Construction Budget & Financials":"Financial Summary"}</div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
-            {(sel.loanType==="construction"?[
+          <Card><div style={{padding:20}}><div style={{fontWeight:700,color:B.navyDeep,marginBottom:14,fontSize:14}}>💰 {{hardmoney:"Financial Summary",construction:"Construction Budget & Financials",dscr:"DSCR & Rental Analysis",nodoc:"No-Doc Program Details"}[sel.loanType]}</div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+            {(sel.loanType==="dscr"?[
+              ["Monthly Rent",`$${sel.monthlyRent?.toLocaleString()||"—"}`],["DSCR",`${sel.dscrRatio?.toFixed(2)||"—"}x`],["Loan Amt",`$${sel.loanAmt?.toLocaleString()}`],["Purchase",`$${sel.purchasePrice?.toLocaleString()}`],
+              ["LTV",`${sel.purchasePrice>0?((sel.loanAmt/sel.purchasePrice)*100).toFixed(1):0}%`],["Rate Type",{fixed30:"30yr Fixed",arm51:"5/1 ARM",arm71:"7/1 ARM"}[sel.rateType]||"—"],
+              ["Credit",sel.credit],["Liquid",`$${sel.liquid?.toLocaleString()}`],
+              ["Ann. Taxes",`$${sel.annualTaxes?.toLocaleString()||"—"}`],["Ann. Insurance",`$${sel.annualInsurance?.toLocaleString()||"—"}`],
+              ["Rental Type",{longterm:"Long-Term",shortterm:"Short-Term",midterm:"Mid-Term"}[sel.rentalType]||"—"],["Experience",sel.experience]
+            ]:sel.loanType==="nodoc"?[
+              ["Program",{bankstatement:"Bank Stmt",asset_depletion:"Asset Depl.",profit_loss:"P&L",nina:"NINA"}[sel.noDocSubtype]||"—"],["Loan Amt",`$${sel.loanAmt?.toLocaleString()}`],["Purchase",`$${sel.purchasePrice?.toLocaleString()}`],
+              ["LTV",`${sel.purchasePrice>0?((sel.loanAmt/sel.purchasePrice)*100).toFixed(1):0}%`],
+              ["Avg Deposits",sel.avgMonthlyDeposits?`$${sel.avgMonthlyDeposits?.toLocaleString()}/mo`:"—"],["Stmt Period",sel.statementPeriod?`${sel.statementPeriod} mo`:"—"],
+              ["Credit",sel.credit],["Liquid",`$${sel.liquid?.toLocaleString()}`],
+              ["Occupancy",{investment:"Investment",primary:"Primary",second:"Second Home"}[sel.occupancy]||"—"],["Down %",`${sel.purchasePrice>0?((1-sel.loanAmt/sel.purchasePrice)*100).toFixed(0):0}%`],
+              ["Experience",sel.experience],["Term",sel.term]
+            ]:sel.loanType==="construction"?[
               ["Land Value",`$${sel.lotValue?.toLocaleString()||"—"}`],["Loan Amt",`$${sel.loanAmt?.toLocaleString()}`],["Hard Costs",`$${sel.hardCosts?.toLocaleString()||"—"}`],["Soft Costs",`$${sel.softCosts?.toLocaleString()||"—"}`],
               ["Total Budget",`$${sel.totalBudget?.toLocaleString()||"—"}`],["Completed Val",`$${sel.completedValue?.toLocaleString()||sel.arv?.toLocaleString()||"—"}`],
               ["LTC",`${sel.totalBudget>0?((sel.loanAmt/(sel.lotValue+sel.totalBudget))*100).toFixed(1):0}%`],["LTV (Completed)",`${(sel.completedValue||sel.arv)>0?((sel.loanAmt/(sel.completedValue||sel.arv))*100).toFixed(1):0}%`],
