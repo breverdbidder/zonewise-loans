@@ -48,3 +48,4 @@ zonewise-loans/
 ```
 
 Built by ZoneWise.AI — Everest Capital USA
+# DSCR + No-Doc Loans - 2026-03-05T22:57:23Z
