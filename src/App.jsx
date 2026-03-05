@@ -16,9 +16,10 @@ const uid=()=>Math.random().toString(36).slice(2,8).toUpperCase();
 const is={width:"100%",padding:"10px 13px",border:`1.5px solid ${B.s200}`,borderRadius:8,fontSize:13,color:B.s800,background:"#fff",outline:"none",fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"border-color 0.2s"};
 
 const MOCK=[
-  {id:"ZW-2601",name:"Marcus Rivera",email:"marcus@riveraprop.com",phone:"(305) 555-1234",entity:"Rivera Properties LLC",propAddr:"2841 NE 33rd Ave, Fort Lauderdale, FL 33308",propType:"Single Family",purpose:"Fix & Flip",purchasePrice:420000,loanAmt:315000,arv:620000,repairBudget:95000,experience:"11-25 Deals",credit:"720+",liquid:280000,condition:"Poor",term:"12",status:"pending",submitted:"2026-03-03",uploads:4,score:null},
-  {id:"ZW-2602",name:"Sarah Chen",email:"schen@outlook.com",phone:"(407) 555-5678",entity:"Individual",propAddr:"1455 S Atlantic Ave, Cocoa Beach, FL 32931",propType:"Duplex",purpose:"Bridge",purchasePrice:580000,loanAmt:435000,arv:720000,repairBudget:60000,experience:"4-10 Deals",credit:"680-719",liquid:350000,condition:"Fair",term:"18",status:"reviewed",submitted:"2026-03-01",uploads:6,score:78},
-  {id:"ZW-2603",name:"David Okafor",email:"dokafor@gmail.com",phone:"(321) 555-9012",entity:"Okafor Capital LLC",propAddr:"780 Brevard Ave, Cocoa, FL 32922",propType:"Fourplex",purpose:"Purchase",purchasePrice:340000,loanAmt:255000,arv:510000,repairBudget:110000,experience:"25+ Deals",credit:"720+",liquid:520000,condition:"Distressed",term:"12",status:"approved",submitted:"2026-02-28",uploads:8,score:91},
+  {id:"ZW-2601",name:"Marcus Rivera",email:"marcus@riveraprop.com",phone:"(305) 555-1234",entity:"Rivera Properties LLC",propAddr:"2841 NE 33rd Ave, Fort Lauderdale, FL 33308",propType:"Single Family",purpose:"Fix & Flip",loanType:"hardmoney",purchasePrice:420000,loanAmt:315000,arv:620000,repairBudget:95000,experience:"11-25 Deals",credit:"720+",liquid:280000,condition:"Poor",term:"12",status:"pending",submitted:"2026-03-03",uploads:4,score:null},
+  {id:"ZW-2602",name:"Sarah Chen",email:"schen@outlook.com",phone:"(407) 555-5678",entity:"Individual",propAddr:"1455 S Atlantic Ave, Cocoa Beach, FL 32931",propType:"Duplex",purpose:"Bridge",loanType:"hardmoney",purchasePrice:580000,loanAmt:435000,arv:720000,repairBudget:60000,experience:"4-10 Deals",credit:"680-719",liquid:350000,condition:"Fair",term:"18",status:"reviewed",submitted:"2026-03-01",uploads:6,score:78},
+  {id:"ZW-2603",name:"David Okafor",email:"dokafor@gmail.com",phone:"(321) 555-9012",entity:"Okafor Capital LLC",propAddr:"780 Brevard Ave, Cocoa, FL 32922",propType:"Fourplex",purpose:"Purchase",loanType:"hardmoney",purchasePrice:340000,loanAmt:255000,arv:510000,repairBudget:110000,experience:"25+ Deals",credit:"720+",liquid:520000,condition:"Distressed",term:"12",status:"approved",submitted:"2026-02-28",uploads:8,score:91},
+  {id:"ZW-2604",name:"Elena Vasquez",email:"elena@vbuilders.com",phone:"(954) 555-3456",entity:"Vasquez Builders LLC",propAddr:"Lot 12, Oceanview Dr, Satellite Beach, FL 32937",propType:"Single Family",purpose:"Ground-Up Construction",loanType:"construction",purchasePrice:180000,loanAmt:720000,arv:1100000,repairBudget:0,experience:"11-25 Deals",credit:"720+",liquid:450000,condition:"Vacant Lot",term:"18",status:"pending",submitted:"2026-03-04",uploads:9,score:null,lotValue:180000,hardCosts:580000,softCosts:95000,totalBudget:675000,completedValue:1100000,constructionType:"ground_up",permitStatus:"approved",plansStatus:"complete",gcContract:"self"},
 ];
 
 function runLocalUnderwriting(app){
@@ -123,7 +124,10 @@ const scoreColor=s=>s>=80?B.green:s>=60?B.orange:B.red;
 // ═══════════════════════════════════════
 function ApplicantPortal({onSwitch}){
   const [step,setStep]=useState(1);
-  const [form,setForm]=useState({firstName:"",lastName:"",email:"",phone:"",entityType:"llc",entityName:"",entityState:"FL",mailAddr:"",mailCity:"",mailState:"FL",mailZip:"",citizenship:"us",propAddr:"",propCity:"",propState:"FL",propZip:"",propType:"sfr",occupancy:"investment",beds:"",baths:"",sqft:"",yearBuilt:"",condition:"fair",purpose:"purchase",purchasePrice:"",loanAmt:"",arv:"",repairBudget:"",loanTerm:"12",downPmt:"",exitStrategy:[],exitNotes:"",projectDesc:"",experience:"4-10",propsOwned:"",creditScore:"720+",liquid:"",bkHist:"none",liens:"none",gc:"self",addNotes:""});
+  const [form,setForm]=useState({loanType:"hardmoney",firstName:"",lastName:"",email:"",phone:"",entityType:"llc",entityName:"",entityState:"FL",mailAddr:"",mailCity:"",mailState:"FL",mailZip:"",citizenship:"us",propAddr:"",propCity:"",propState:"FL",propZip:"",propType:"sfr",occupancy:"investment",beds:"",baths:"",sqft:"",yearBuilt:"",condition:"fair",purpose:"purchase",purchasePrice:"",loanAmt:"",arv:"",repairBudget:"",loanTerm:"12",downPmt:"",exitStrategy:[],exitNotes:"",projectDesc:"",experience:"4-10",propsOwned:"",creditScore:"720+",liquid:"",bkHist:"none",liens:"none",gc:"self",addNotes:"",
+    // Construction fields
+    constructionType:"ground_up",lotValue:"",hardCosts:"",softCosts:"",totalConstructionBudget:"",numDraws:"5",permitStatus:"not_applied",plansStatus:"in_progress",gcContract:"signed",constructionTimeline:"12",interestReserve:"",completedValue:""
+  });
   const [uploads,setUploads]=useState([]);
   const [submitted,setSubmitted]=useState(false);
   const [consentAll,setConsentAll]=useState([false,false,false]);
@@ -146,7 +150,7 @@ function ApplicantPortal({onSwitch}){
     </div>
   );
 
-  const labels=["Borrower","Property","Loan Details","Plans & Docs","Experience","Review"];
+  const labels=["Borrower","Property",form.loanType==="construction"?"Construction Budget":"Loan Details","Plans & Docs","Experience","Review"];
   const RadioGroup=({name,value,options,onChange})=>(<div style={{display:"grid",gridTemplateColumns:`repeat(${options.length},1fr)`,gap:8}}>{options.map(([v,l])=>(<label key={v} style={{cursor:"pointer"}}><input type="radio" name={name} checked={value===v} onChange={()=>onChange(v)} style={{display:"none"}} /><div style={{padding:"10px",borderRadius:8,fontSize:13,fontWeight:value===v?600:500,border:`1.5px solid ${value===v?B.navy:B.s200}`,background:value===v?"rgba(30,58,95,0.04)":"#fff",color:value===v?B.navy:B.s700,textAlign:"center",transition:"all 0.2s"}}>{l}</div></label>))}</div>);
   const CheckGroup=({values,options,onChange})=>(<div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(options.length,4)},1fr)`,gap:8}}>{options.map(([v,l])=>(<label key={v} style={{cursor:"pointer"}}><input type="checkbox" checked={values.includes(v)} onChange={e=>onChange(e.target.checked?[...values,v]:values.filter(x=>x!==v))} style={{display:"none"}} /><div style={{padding:"10px",borderRadius:8,fontSize:13,fontWeight:values.includes(v)?600:500,border:`1.5px solid ${values.includes(v)?B.navy:B.s200}`,background:values.includes(v)?"rgba(30,58,95,0.04)":"#fff",color:values.includes(v)?B.navy:B.s700,textAlign:"center"}}>{l}</div></label>))}</div>);
   const Sep=()=><div style={{borderTop:`1px solid ${B.s200}`,margin:"16px 0"}} />;
@@ -161,11 +165,28 @@ function ApplicantPortal({onSwitch}){
           <Logo /><Btn variant="ghost" onClick={onSwitch} style={{color:B.s400,borderColor:"rgba(255,255,255,0.15)",fontSize:11}}>🔐 Admin Portal</Btn>
         </div>
         <div style={{padding:"28px 32px 36px",position:"relative",zIndex:1}}>
-          <h1 style={{fontFamily:"'Fraunces',Georgia,serif",fontSize:28,fontWeight:800,color:"#fff",marginBottom:4}}>Hard Money Loan Application</h1>
+          <h1 style={{fontFamily:"'Fraunces',Georgia,serif",fontSize:28,fontWeight:800,color:"#fff",marginBottom:4}}>{form.loanType==="construction"?"Ground-Up Construction Loan Application":"Hard Money Loan Application"}</h1>
           <p style={{color:B.s400,fontSize:13,maxWidth:560}}>Complete your application and upload project materials. Our AI engine generates underwriting analysis and a pitch deck for lender submission.</p>
           <div style={{display:"flex",gap:12,marginTop:16,flexWrap:"wrap"}}><Badge icon="🤖" text="AI Underwriting" /><Badge icon="📊" text="Auto Pitch Deck" /><Badge icon="🔒" text="Bank-Grade Security" /></div>
         </div>
       </header>
+
+      {/* LOAN TYPE SELECTOR */}
+      <div style={{background:B.navyDeep,padding:"0 32px",borderBottom:`1px solid rgba(255,255,255,0.08)`}}>
+        <div style={{display:"flex",gap:4,maxWidth:880,margin:"0 auto"}}>
+          {[["hardmoney","🏠 Hard Money Loan","Fix & flip, bridge, investment"],["construction","🏗️ Construction Loan","Ground-up, tear-down, major reno"]].map(([v,label,sub])=>(
+            <button key={v} onClick={()=>{u("loanType",v);setStep(1)}} style={{
+              padding:"14px 24px",cursor:"pointer",border:"none",fontFamily:"'Plus Jakarta Sans',sans-serif",
+              background:form.loanType===v?"rgba(245,158,11,0.12)":"transparent",
+              borderBottom:`3px solid ${form.loanType===v?B.orange:"transparent"}`,
+              transition:"all 0.2s",display:"flex",flexDirection:"column",alignItems:"flex-start"
+            }}>
+              <span style={{fontSize:13,fontWeight:form.loanType===v?700:500,color:form.loanType===v?"#fff":B.s400}}>{label}</span>
+              <span style={{fontSize:10,color:form.loanType===v?B.orangeLight:B.s600,marginTop:2}}>{sub}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       <nav style={{background:"#fff",borderBottom:`1px solid ${B.s200}`,position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 3px rgba(0,0,0,0.04)",overflowX:"auto"}}>
         <div style={{display:"flex",padding:"0 20px",minWidth:"fit-content"}}>
@@ -198,15 +219,47 @@ function ApplicantPortal({onSwitch}){
           <Grid><Field label="Year Built"><input style={is} type="number" value={form.yearBuilt} onChange={e=>u("yearBuilt",e.target.value)} /></Field><Field label="Condition"><select style={is} value={form.condition} onChange={e=>u("condition",e.target.value)}><option value="excellent">Excellent</option><option value="good">Good</option><option value="fair">Fair</option><option value="poor">Poor</option><option value="distressed">Distressed</option></select></Field></Grid>
         </div></Card><div style={{display:"flex",justifyContent:"space-between",marginTop:20}}><Btn variant="back" onClick={()=>setStep(1)}>← Back</Btn><Btn onClick={()=>setStep(3)}>Continue → Loan Details</Btn></div></div>}
 
-        {step===3&&<div><Card><CardHead title="Loan Request" sub="Financing structure and exit strategy" /><div style={{padding:"8px 24px 24px"}}>
-          <Field label="Loan Purpose" required><RadioGroup name="purpose" value={form.purpose} options={[["purchase","Purchase"],["refinance","Refinance"],["cashout","Cash-Out"],["bridge","Bridge"]]} onChange={v=>u("purpose",v)} /></Field>
-          <Sep />
-          <Grid><CurField label="Purchase Price / Value" required value={form.purchasePrice} onChange={v=>u("purchasePrice",v)} /><CurField label="Loan Amount" required value={form.loanAmt} onChange={v=>u("loanAmt",v)} /></Grid>
-          <Grid><CurField label="After Repair Value (ARV)" hint="Post-renovation value" value={form.arv} onChange={v=>u("arv",v)} /><CurField label="Repair Budget" value={form.repairBudget} onChange={v=>u("repairBudget",v)} /></Grid>
-          <Grid><Field label="Loan Term" required><select style={is} value={form.loanTerm} onChange={e=>u("loanTerm",e.target.value)}><option value="6">6 Mo</option><option value="9">9 Mo</option><option value="12">12 Mo</option><option value="18">18 Mo</option><option value="24">24 Mo</option></select></Field><CurField label="Down Payment / Equity" required value={form.downPmt} onChange={v=>u("downPmt",v)} /></Grid>
-          <Sep />
-          <Field label="Exit Strategy"><CheckGroup values={form.exitStrategy} options={[["flip","Fix & Flip"],["refi","Refi to Perm"],["rental","Hold Rental"],["other","Other"]]} onChange={v=>u("exitStrategy",v)} /></Field>
-          <Field label="Exit Notes"><textarea style={{...is,minHeight:70,resize:"vertical"}} value={form.exitNotes} onChange={e=>u("exitNotes",e.target.value)} placeholder="Timeline, comps, projections…" /></Field>
+        {step===3&&<div><Card><CardHead title={form.loanType==="construction"?"Construction Loan Request":"Loan Request"} sub={form.loanType==="construction"?"Ground-up or major renovation financing details":"Financing structure and exit strategy"} /><div style={{padding:"8px 24px 24px"}}>
+          {form.loanType==="hardmoney"?<>
+            <Field label="Loan Purpose" required><RadioGroup name="purpose" value={form.purpose} options={[["purchase","Purchase"],["refinance","Refinance"],["cashout","Cash-Out"],["bridge","Bridge"]]} onChange={v=>u("purpose",v)} /></Field>
+            <Sep />
+            <Grid><CurField label="Purchase Price / Value" required value={form.purchasePrice} onChange={v=>u("purchasePrice",v)} /><CurField label="Loan Amount" required value={form.loanAmt} onChange={v=>u("loanAmt",v)} /></Grid>
+            <Grid><CurField label="After Repair Value (ARV)" hint="Post-renovation value" value={form.arv} onChange={v=>u("arv",v)} /><CurField label="Repair Budget" value={form.repairBudget} onChange={v=>u("repairBudget",v)} /></Grid>
+            <Grid><Field label="Loan Term" required><select style={is} value={form.loanTerm} onChange={e=>u("loanTerm",e.target.value)}><option value="6">6 Mo</option><option value="9">9 Mo</option><option value="12">12 Mo</option><option value="18">18 Mo</option><option value="24">24 Mo</option></select></Field><CurField label="Down Payment / Equity" required value={form.downPmt} onChange={v=>u("downPmt",v)} /></Grid>
+            <Sep />
+            <Field label="Exit Strategy"><CheckGroup values={form.exitStrategy} options={[["flip","Fix & Flip"],["refi","Refi to Perm"],["rental","Hold Rental"],["other","Other"]]} onChange={v=>u("exitStrategy",v)} /></Field>
+            <Field label="Exit Notes"><textarea style={{...is,minHeight:70,resize:"vertical"}} value={form.exitNotes} onChange={e=>u("exitNotes",e.target.value)} placeholder="Timeline, comps, projections…" /></Field>
+          </>:<>
+            {/* CONSTRUCTION LOAN FIELDS */}
+            <Field label="Construction Type" required><RadioGroup name="constType" value={form.constructionType} options={[["ground_up","Ground-Up New Build"],["tear_down","Tear-Down & Rebuild"],["major_reno","Major Renovation"]]} onChange={v=>u("constructionType",v)} /></Field>
+            <Sep />
+            <div style={{background:B.orangeGlow,border:`1px solid ${B.orange}40`,borderRadius:10,padding:"14px 18px",marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:700,color:B.navyDeep,marginBottom:4}}>🏗️ Construction Budget Breakdown</div>
+              <div style={{fontSize:11,color:B.s600}}>Provide detailed cost breakdowns — lenders require itemized budgets for draw schedules</div>
+            </div>
+            <Grid><CurField label="Land / Lot Value" required hint="Purchase price or appraised value of land" value={form.lotValue} onChange={v=>u("lotValue",v)} /><CurField label="Total Loan Amount Requested" required value={form.loanAmt} onChange={v=>u("loanAmt",v)} /></Grid>
+            <Grid><CurField label="Hard Costs" required hint="Materials, labor, subcontractors" value={form.hardCosts} onChange={v=>u("hardCosts",v)} /><CurField label="Soft Costs" required hint="Permits, architecture, engineering, inspections" value={form.softCosts} onChange={v=>u("softCosts",v)} /></Grid>
+            <Grid><CurField label="Total Construction Budget" required hint="Hard + soft costs combined" value={form.totalConstructionBudget} onChange={v=>u("totalConstructionBudget",v)} /><CurField label="Completed / As-Built Value" required hint="Expected value upon completion" value={form.completedValue} onChange={v=>u("completedValue",v)} /></Grid>
+            <Sep />
+            <Grid><CurField label="Interest Reserve" hint="Pre-funded interest during construction" value={form.interestReserve} onChange={v=>u("interestReserve",v)} /><CurField label="Down Payment / Equity" required value={form.downPmt} onChange={v=>u("downPmt",v)} /></Grid>
+            <Grid>
+              <Field label="Construction Timeline" required><select style={is} value={form.constructionTimeline} onChange={e=>u("constructionTimeline",e.target.value)}><option value="6">6 Months</option><option value="9">9 Months</option><option value="12">12 Months</option><option value="18">18 Months</option><option value="24">24 Months</option><option value="36">36 Months</option></select></Field>
+              <Field label="Expected Draw Requests" required hint="Number of construction draws"><select style={is} value={form.numDraws} onChange={e=>u("numDraws",e.target.value)}><option value="3">3 Draws</option><option value="4">4 Draws</option><option value="5">5 Draws</option><option value="6">6 Draws</option><option value="8">8 Draws</option><option value="10">10+ Draws</option></select></Field>
+            </Grid>
+            <Sep />
+            <div style={{fontWeight:700,fontSize:14,color:B.navyDeep,marginBottom:12}}>📋 Project Readiness</div>
+            <Grid>
+              <Field label="Permit Status" required><select style={is} value={form.permitStatus} onChange={e=>u("permitStatus",e.target.value)}><option value="approved">Approved / In-Hand</option><option value="submitted">Submitted — Pending</option><option value="not_applied">Not Yet Applied</option><option value="not_required">Not Required</option></select></Field>
+              <Field label="Architectural Plans" required><select style={is} value={form.plansStatus} onChange={e=>u("plansStatus",e.target.value)}><option value="complete">Complete & Stamped</option><option value="in_progress">In Progress</option><option value="preliminary">Preliminary / Conceptual</option><option value="none">None Yet</option></select></Field>
+            </Grid>
+            <Grid>
+              <Field label="GC Contract Status" required><select style={is} value={form.gcContract} onChange={e=>u("gcContract",e.target.value)}><option value="signed">Signed Contract</option><option value="bidding">Bidding / Negotiating</option><option value="self">Self (Owner-Builder)</option><option value="none">No GC Yet</option></select></Field>
+              <Field label="Loan Term" required><select style={is} value={form.loanTerm} onChange={e=>u("loanTerm",e.target.value)}><option value="12">12 Months</option><option value="18">18 Months</option><option value="24">24 Months</option><option value="36">36 Months</option></select></Field>
+            </Grid>
+            <Sep />
+            <Field label="Exit Strategy"><CheckGroup values={form.exitStrategy} options={[["sell","Sell Upon Completion"],["refi","Refi to Permanent Mortgage"],["rental","Hold as Rental"],["other","Other"]]} onChange={v=>u("exitStrategy",v)} /></Field>
+            <Field label="Exit Strategy Details"><textarea style={{...is,minHeight:70,resize:"vertical"}} value={form.exitNotes} onChange={e=>u("exitNotes",e.target.value)} placeholder="Anticipated sale price, refinance plan, rental pro forma, comparable new builds…" /></Field>
+          </>}
         </div></Card><div style={{display:"flex",justifyContent:"space-between",marginTop:20}}><Btn variant="back" onClick={()=>setStep(2)}>← Back</Btn><Btn onClick={()=>setStep(4)}>Continue → Plans & Documents</Btn></div></div>}
 
         {step===4&&<div><Card><CardHead title="Plans, Renderings & Project Photos" sub="Upload construction plans, renderings, before/after photos, scope of work, comparable sales" /><div style={{padding:"8px 24px 24px"}}>
@@ -236,7 +289,15 @@ function ApplicantPortal({onSwitch}){
         </div></Card><div style={{display:"flex",justifyContent:"space-between",marginTop:20}}><Btn variant="back" onClick={()=>setStep(4)}>← Back</Btn><Btn variant="orange" onClick={()=>setStep(6)}>Review & Submit →</Btn></div></div>}
 
         {step===6&&<div><Card><CardHead title="Application Summary" sub="Verify before submitting" /><div style={{padding:"8px 24px 24px"}}>
-          {[{icon:"👤",t:"Borrower",items:[["Name",`${form.firstName} ${form.lastName}`],["Email",form.email],["Phone",form.phone],["Entity",form.entityType==="individual"?"Individual":form.entityName]]},{icon:"🏠",t:"Property",items:[["Address",`${form.propAddr}, ${form.propCity}, ${form.propState} ${form.propZip}`],["Type",form.propType.toUpperCase()],["Condition",form.condition]]},{icon:"💰",t:"Loan",items:[["Purpose",form.purpose],["Amount",`$${form.loanAmt}`],["Price/Value",`$${form.purchasePrice}`],["ARV",form.arv?`$${form.arv}`:"—"],["Term",`${form.loanTerm} mo`]]},{icon:"📊",t:"Financials",items:[["Experience",form.experience],["Credit",form.creditScore],["Liquid",`$${form.liquid}`],["Uploads",`${uploads.length} files`]]}].map(s=>(
+          <div style={{background:form.loanType==="construction"?"rgba(245,158,11,0.08)":B.s50,borderRadius:10,padding:"10px 18px",border:`1px solid ${form.loanType==="construction"?B.orange+"40":B.s200}`,marginBottom:12,fontSize:13,fontWeight:600,color:B.navyDeep}}>{form.loanType==="construction"?"🏗️ Construction Loan Application":"🏠 Hard Money Loan Application"}</div>
+          {[{icon:"👤",t:"Borrower",items:[["Name",`${form.firstName} ${form.lastName}`],["Email",form.email],["Phone",form.phone],["Entity",form.entityType==="individual"?"Individual":form.entityName]]},{icon:"🏠",t:"Property",items:[["Address",`${form.propAddr}, ${form.propCity}, ${form.propState} ${form.propZip}`],["Type",form.propType.toUpperCase()],["Condition",form.condition]]},
+            ...(form.loanType==="construction"?[
+              {icon:"🏗️",t:"Construction",items:[["Type",{ground_up:"Ground-Up New Build",tear_down:"Tear-Down & Rebuild",major_reno:"Major Renovation"}[form.constructionType]||form.constructionType],["Lot Value",form.lotValue?`$${form.lotValue}`:"—"],["Hard Costs",form.hardCosts?`$${form.hardCosts}`:"—"],["Soft Costs",form.softCosts?`$${form.softCosts}`:"—"],["Total Budget",form.totalConstructionBudget?`$${form.totalConstructionBudget}`:"—"],["Completed Value",form.completedValue?`$${form.completedValue}`:"—"],["Timeline",`${form.constructionTimeline} months`],["Draws",form.numDraws]]},
+              {icon:"📋",t:"Readiness",items:[["Permits",{approved:"Approved",submitted:"Submitted",not_applied:"Not Applied",not_required:"N/A"}[form.permitStatus]||form.permitStatus],["Plans",{complete:"Complete & Stamped",in_progress:"In Progress",preliminary:"Preliminary",none:"None"}[form.plansStatus]||form.plansStatus],["GC Contract",{signed:"Signed",bidding:"Bidding",self:"Owner-Builder",none:"None"}[form.gcContract]||form.gcContract]]}
+            ]:[]),
+            {icon:"💰",t:"Loan",items:[...(form.loanType==="hardmoney"?[["Purpose",form.purpose]]:[]),["Loan Amount",`$${form.loanAmt}`],...(form.loanType==="hardmoney"?[["Price/Value",`$${form.purchasePrice}`],["ARV",form.arv?`$${form.arv}`:"—"]]:[]),["Term",`${form.loanTerm} mo`],["Down Payment",form.downPmt?`$${form.downPmt}`:"—"]]},
+            {icon:"📊",t:"Financials",items:[["Experience",form.experience],["Credit",form.creditScore],["Liquid",`$${form.liquid}`],["Uploads",`${uploads.length} files`]]}
+          ].map(s=>(
             <div key={s.t} style={{background:B.s50,borderRadius:10,padding:18,border:`1px solid ${B.s200}`,marginBottom:12}}>
               <div style={{fontWeight:700,color:B.navyDeep,marginBottom:10,fontSize:14}}>{s.icon} {s.t}</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 20px",fontSize:13}}>{s.items.map(([k,v])=><div key={k}><span style={{color:B.s400}}>{k}:</span> <strong>{v||"—"}</strong></div>)}</div>
@@ -295,11 +356,12 @@ function AdminPortal({onSwitch}){
           </div>
           <Card><CardHead title="Loan Applications" sub="Click to review and run AI underwriting" /><div style={{padding:"8px 24px 24px",overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
-              <thead><tr style={{borderBottom:`2px solid ${B.s200}`}}>{["ID","Borrower","Property","Loan","LTV","Status","Score",""].map(h=><th key={h} style={{padding:"10px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:B.s400,textTransform:"uppercase",letterSpacing:.8}}>{h}</th>)}</tr></thead>
+              <thead><tr style={{borderBottom:`2px solid ${B.s200}`}}>{["ID","Borrower","Type","Property","Loan","LTV","Status","Score",""].map(h=><th key={h} style={{padding:"10px 12px",textAlign:"left",fontSize:11,fontWeight:700,color:B.s400,textTransform:"uppercase",letterSpacing:.8}}>{h}</th>)}</tr></thead>
               <tbody>{apps.map(a=>{const ltv=a.purchasePrice>0?((a.loanAmt/a.purchasePrice)*100).toFixed(0):"—";return(
                 <tr key={a.id} onClick={()=>openApp(a)} style={{borderBottom:`1px solid ${B.s100}`,cursor:"pointer"}} onMouseEnter={e=>e.currentTarget.style.background=B.s50} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                   <td style={{padding:12,fontFamily:"'JetBrains Mono',monospace",fontWeight:600,color:B.navy,fontSize:12}}>{a.id}</td>
                   <td style={{padding:12}}><div style={{fontWeight:600}}>{a.name}</div><div style={{fontSize:11,color:B.s400}}>{a.entity}</div></td>
+                  <td style={{padding:12}}><span style={{padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,background:a.loanType==="construction"?B.orangeGlow:B.s100,color:a.loanType==="construction"?"#92400e":B.s600,border:`1px solid ${a.loanType==="construction"?B.orange+"40":B.s200}`}}>{a.loanType==="construction"?"🏗️ Construction":"🏠 Hard Money"}</span></td>
                   <td style={{padding:12,fontSize:12,maxWidth:200,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.propAddr}</td>
                   <td style={{padding:12,fontFamily:"'JetBrains Mono',monospace",fontWeight:600}}>${(a.loanAmt/1000).toFixed(0)}K</td>
                   <td style={{padding:12,fontFamily:"'JetBrains Mono',monospace",fontWeight:600,color:parseFloat(ltv)<=75?B.green:B.amber}}>{ltv}%</td>
@@ -316,15 +378,24 @@ function AdminPortal({onSwitch}){
           <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
             <Btn variant="back" onClick={()=>{setView("dashboard");setSel(null)}} style={{padding:"6px 14px",fontSize:12}}>← Back</Btn>
             <h2 style={{fontFamily:"'Fraunces',Georgia,serif",fontSize:22,fontWeight:700,color:B.navyDeep,margin:0}}>Application {sel.id}</h2>
+            <span style={{padding:"3px 10px",borderRadius:100,fontSize:10,fontWeight:700,background:sel.loanType==="construction"?B.orangeGlow:B.s100,color:sel.loanType==="construction"?"#92400e":B.s600,border:`1px solid ${sel.loanType==="construction"?B.orange+"40":B.s200}`}}>{sel.loanType==="construction"?"🏗️ Construction":"🏠 Hard Money"}</span>
             <StatusBadge status={sel.status} />
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
-            {[{i:"👤",t:"Borrower",items:[["Name",sel.name],["Email",sel.email],["Phone",sel.phone],["Entity",sel.entity],["Submitted",sel.submitted]]},{i:"🏠",t:"Property",items:[["Address",sel.propAddr],["Type",sel.propType],["Condition",sel.condition],["Docs",`${sel.uploads} files`]]}].map(s=>(
+            {[{i:"👤",t:"Borrower",items:[["Name",sel.name],["Email",sel.email],["Phone",sel.phone],["Entity",sel.entity],["Submitted",sel.submitted]]},{i:"🏠",t:"Property",items:[["Address",sel.propAddr],["Type",sel.propType],["Condition",sel.condition],["Docs",`${sel.uploads} files`],...(sel.loanType==="construction"?[["Construction",{ground_up:"Ground-Up",tear_down:"Tear-Down",major_reno:"Major Reno"}[sel.constructionType]||"—"],["Permits",{approved:"✅ Approved",submitted:"⏳ Pending",not_applied:"❌ Not Applied"}[sel.permitStatus]||"—"],["Plans",{complete:"✅ Stamped",in_progress:"⏳ In Progress"}[sel.plansStatus]||"—"]]:[])]
+            }].map(s=>(
               <Card key={s.t}><div style={{padding:20}}><div style={{fontWeight:700,color:B.navyDeep,marginBottom:12,fontSize:14}}>{s.i} {s.t}</div>{s.items.map(([k,v])=><div key={k} style={{display:"flex",justifyContent:"space-between",fontSize:13,padding:"5px 0",borderBottom:`1px solid ${B.s100}`}}><span style={{color:B.s400}}>{k}</span><strong>{v}</strong></div>)}</div></Card>
             ))}
           </div>
-          <Card><div style={{padding:20}}><div style={{fontWeight:700,color:B.navyDeep,marginBottom:14,fontSize:14}}>💰 Financial Summary</div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
-            {[["Purchase",`$${sel.purchasePrice?.toLocaleString()}`],["Loan",`$${sel.loanAmt?.toLocaleString()}`],["ARV",`$${sel.arv?.toLocaleString()}`],["Rehab",`$${sel.repairBudget?.toLocaleString()}`],["LTV",`${sel.purchasePrice>0?((sel.loanAmt/sel.purchasePrice)*100).toFixed(1):0}%`],["ARV LTV",`${sel.arv>0?((sel.loanAmt/sel.arv)*100).toFixed(1):0}%`],["Credit",sel.credit],["Liquid",`$${sel.liquid?.toLocaleString()}`]].map(([k,v])=>(
+          <Card><div style={{padding:20}}><div style={{fontWeight:700,color:B.navyDeep,marginBottom:14,fontSize:14}}>💰 {sel.loanType==="construction"?"Construction Budget & Financials":"Financial Summary"}</div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12}}>
+            {(sel.loanType==="construction"?[
+              ["Land Value",`$${sel.lotValue?.toLocaleString()||"—"}`],["Loan Amt",`$${sel.loanAmt?.toLocaleString()}`],["Hard Costs",`$${sel.hardCosts?.toLocaleString()||"—"}`],["Soft Costs",`$${sel.softCosts?.toLocaleString()||"—"}`],
+              ["Total Budget",`$${sel.totalBudget?.toLocaleString()||"—"}`],["Completed Val",`$${sel.completedValue?.toLocaleString()||sel.arv?.toLocaleString()||"—"}`],
+              ["LTC",`${sel.totalBudget>0?((sel.loanAmt/(sel.lotValue+sel.totalBudget))*100).toFixed(1):0}%`],["LTV (Completed)",`${(sel.completedValue||sel.arv)>0?((sel.loanAmt/(sel.completedValue||sel.arv))*100).toFixed(1):0}%`],
+              ["Timeline",`${sel.term} Mo`],["Credit",sel.credit],["Liquid",`$${sel.liquid?.toLocaleString()}`],["Experience",sel.experience]
+            ]:[
+              ["Purchase",`$${sel.purchasePrice?.toLocaleString()}`],["Loan",`$${sel.loanAmt?.toLocaleString()}`],["ARV",`$${sel.arv?.toLocaleString()}`],["Rehab",`$${sel.repairBudget?.toLocaleString()}`],["LTV",`${sel.purchasePrice>0?((sel.loanAmt/sel.purchasePrice)*100).toFixed(1):0}%`],["ARV LTV",`${sel.arv>0?((sel.loanAmt/sel.arv)*100).toFixed(1):0}%`],["Credit",sel.credit],["Liquid",`$${sel.liquid?.toLocaleString()}`]
+            ]).map(([k,v])=>(
               <div key={k} style={{background:B.s50,borderRadius:8,padding:14,border:`1px solid ${B.s200}`}}><div style={{fontSize:10,textTransform:"uppercase",letterSpacing:1,color:B.s400,fontWeight:600}}>{k}</div><div style={{fontSize:18,fontWeight:700,color:B.navy,fontFamily:"'JetBrains Mono',monospace",marginTop:2}}>{v}</div></div>
             ))}
           </div></div></Card>
