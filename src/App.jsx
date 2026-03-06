@@ -122,6 +122,9 @@ export default function App() {
               </div>
             </div>
             <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="admin-gate-title"
               style={{
                 background: "rgba(255,255,255,0.03)",
                 backdropFilter: "blur(20px)",
@@ -134,6 +137,7 @@ export default function App() {
               <div style={{ textAlign: "center", marginBottom: 20 }}>
                 <div style={{ fontSize: 36, marginBottom: 8 }}>🔐</div>
                 <h2
+                  id="admin-gate-title"
                   style={{
                     fontFamily: "'Fraunces',Georgia,serif",
                     fontSize: 20,
@@ -192,10 +196,13 @@ export default function App() {
                   }}
                   placeholder="••••••••"
                   autoFocus
+                  aria-label="Administrator Password"
                 />
               </div>
               {adminErr && (
                 <div
+                  role="alert"
+                  aria-live="polite"
                   style={{
                     background: "rgba(239,68,68,0.12)",
                     border: "1px solid rgba(239,68,68,0.25)",
@@ -276,18 +283,44 @@ export default function App() {
 
   return (
     <AuthGate>
-      {portal === "admin" && adminAuthed ? (
-        <AdminPortal
-          onSwitch={() => {
-            setPortal("applicant");
-            setAdminAuthed(false);
-          }}
-        />
-      ) : (
-        <ApplicantPortal
-          onSwitch={userIsAdmin ? () => setPortal("admin") : null}
-        />
-      )}
+      <a
+        href="#main-content"
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: "auto",
+          width: "1px",
+          height: "1px",
+          overflow: "hidden",
+        }}
+        onFocus={(e) => {
+          e.target.style.position = "static";
+          e.target.style.width = "auto";
+          e.target.style.height = "auto";
+        }}
+        onBlur={(e) => {
+          e.target.style.position = "absolute";
+          e.target.style.left = "-9999px";
+          e.target.style.width = "1px";
+          e.target.style.height = "1px";
+        }}
+      >
+        Skip to content
+      </a>
+      <div id="main-content">
+        {portal === "admin" && adminAuthed ? (
+          <AdminPortal
+            onSwitch={() => {
+              setPortal("applicant");
+              setAdminAuthed(false);
+            }}
+          />
+        ) : (
+          <ApplicantPortal
+            onSwitch={userIsAdmin ? () => setPortal("admin") : null}
+          />
+        )}
+      </div>
     </AuthGate>
   );
 }

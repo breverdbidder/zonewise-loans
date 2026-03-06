@@ -55,6 +55,7 @@ export const CurField = ({ label, required, hint, value, onChange }) => (
         style={{ ...INPUT_STYLE, paddingLeft: 24 }}
         value={value}
         onChange={(e) => onChange(fC(e.target.value))}
+        aria-label={label}
       />
     </div>
   </Field>

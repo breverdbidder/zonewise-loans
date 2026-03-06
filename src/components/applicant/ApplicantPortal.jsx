@@ -230,10 +230,14 @@ export function ApplicantPortal({ onSwitch }) {
         </div>
 
         {/* Step Navigation */}
-        <div style={{
-          display: "flex", borderBottom: `2px solid ${B.slate200}`,
-          marginBottom: 24, overflowX: "auto",
-        }}>
+        <div
+          role="tablist"
+          aria-label="Application steps"
+          style={{
+            display: "flex", borderBottom: `2px solid ${B.slate200}`,
+            marginBottom: 24, overflowX: "auto",
+          }}
+        >
           {labels.map((l, i) => {
             const n = i + 1;
             const ac = step === n;
@@ -241,6 +245,9 @@ export function ApplicantPortal({ onSwitch }) {
             return (
               <button
                 key={n}
+                role="tab"
+                aria-selected={ac}
+                aria-label={`Step ${n}: ${l}`}
                 onClick={() => n <= step && setStep(n)}
                 style={{
                   display: "flex", alignItems: "center", gap: 8,

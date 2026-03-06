@@ -29,10 +29,14 @@ const statusMap = {
 export const StatusBadge = ({ status }) => {
   const s = statusMap[status] || statusMap.pending;
   return (
-    <span style={{
-      padding: "4px 12px", borderRadius: 100,
-      fontSize: 11, fontWeight: 700,
-      background: s.bg, color: s.color,
-    }}>{s.l}</span>
+    <span
+      role="status"
+      aria-label={`Application status: ${s.l}`}
+      style={{
+        padding: "4px 12px", borderRadius: 100,
+        fontSize: 11, fontWeight: 700,
+        background: s.bg, color: s.color,
+      }}
+    >{s.l}</span>
   );
 };

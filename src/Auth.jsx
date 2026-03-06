@@ -232,12 +232,16 @@ export function AuthGate({ children }) {
    * @returns {JSX.Element|null}
    */
   const Msg = ({ type, text }) => text ? (
-    <div style={{
-      background: type === "error" ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.12)",
-      border: `1px solid ${type === "error" ? "rgba(239,68,68,0.25)" : "rgba(16,185,129,0.25)"}`,
-      borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,lineHeight:1.6,
-      color: type === "error" ? "#fca5a5" : "#6ee7b7"
-    }}>{type === "error" ? "⚠️" : "✅"} {text}</div>
+    <div
+      role={type === "error" ? "alert" : "status"}
+      aria-live="polite"
+      style={{
+        background: type === "error" ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.12)",
+        border: `1px solid ${type === "error" ? "rgba(239,68,68,0.25)" : "rgba(16,185,129,0.25)"}`,
+        borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,lineHeight:1.6,
+        color: type === "error" ? "#fca5a5" : "#6ee7b7"
+      }}
+    >{type === "error" ? "⚠️" : "✅"} {text}</div>
   ) : null;
 
   /**
@@ -320,11 +324,11 @@ export function AuthGate({ children }) {
               </div>
               <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>Email Address</label>
-                <input style={inp} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required />
+                <input style={inp} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required aria-label="Email Address" />
               </div>
               <div style={{ marginBottom:20 }}>
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>Password</label>
-                <input style={inp} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} />
+                <input style={inp} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} aria-label="Password" />
               </div>
               <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}>
                 <HCaptcha
@@ -368,15 +372,15 @@ export function AuthGate({ children }) {
               </div>
               <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>Full Name</label>
-                <input style={inp} value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" required />
+                <input style={inp} value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" required aria-label="Full Name" />
               </div>
               <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>Email Address</label>
-                <input style={inp} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required />
+                <input style={inp} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required aria-label="Email Address" />
               </div>
               <div style={{ marginBottom:20 }}>
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>Password</label>
-                <input style={inp} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters" required minLength={6} />
+                <input style={inp} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters" required minLength={6} aria-label="Password" />
               </div>
               <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}>
                 <HCaptcha
@@ -423,7 +427,7 @@ export function AuthGate({ children }) {
             <form onSubmit={handleResetRequest}>
               <div style={{ marginBottom:20 }}>
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>Email Address</label>
-                <input style={inp} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required />
+                <input style={inp} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" required aria-label="Email Address" />
               </div>
               <Msg type="error" text={error} />
               <Submit text="Send Recovery Email" />
@@ -465,6 +469,7 @@ export function AuthGate({ children }) {
                     onChange={e => setOtp(e.target.value.replace(/\D/g,"").slice(0,8))}
                     placeholder="000000"
                     maxLength={8}
+                    aria-label="Recovery Code"
                   />
                 </div>
                 <Msg type="error" text={error} />
@@ -496,7 +501,7 @@ export function AuthGate({ children }) {
               <Msg type="success" text={message} />
               <div style={{ marginBottom:20 }}>
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>New Password</label>
-                <input style={inp} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Min 6 characters" required minLength={6} autoFocus />
+                <input style={inp} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Min 6 characters" required minLength={6} autoFocus aria-label="New Password" />
               </div>
               <Msg type="error" text={error} />
               <Submit text="Update Password" />
