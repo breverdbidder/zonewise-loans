@@ -1,5 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { supabase } from "./supabase";
+
+const HCAPTCHA_SITEKEY = "10000000-ffff-ffff-ffff-000000000001";
 
 const B = {
   navy:"#1E3A5F",navyDeep:"#0F1D30",navyMid:"#2A4D7A",
@@ -45,6 +48,8 @@ export function AuthGate({ children }) {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const captchaRef = useRef(null);
 
   // Handle password reset token in URL (from email link)
   useEffect(() => {
@@ -76,8 +81,13 @@ export function AuthGate({ children }) {
 
   const handleLogin = async (e) => {
     e.preventDefault(); clear(); setSubmitting(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email, password,
+      options: { captchaToken },
+    });
     if (error) setError(error.message);
+    setCaptchaToken("");
+    captchaRef.current?.resetCaptcha();
     setSubmitting(false);
   };
 
@@ -85,7 +95,7 @@ export function AuthGate({ children }) {
     e.preventDefault(); clear(); setSubmitting(true);
     const { data, error } = await supabase.auth.signUp({
       email, password,
-      options: { data: { full_name: fullName } }
+      options: { captchaToken, data: { full_name: fullName } },
     });
     if (error) { setError(error.message); }
     else if (data?.user?.identities?.length === 0) {
@@ -94,6 +104,8 @@ export function AuthGate({ children }) {
       go("verify");
       setMessage("Check your email (including spam/junk) for a confirmation link from noreply@mail.app.supabase.io");
     }
+    setCaptchaToken("");
+    captchaRef.current?.resetCaptcha();
     setSubmitting(false);
   };
 
@@ -244,6 +256,15 @@ export function AuthGate({ children }) {
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>Password</label>
                 <input style={inp} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} />
               </div>
+              <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}>
+                <HCaptcha
+                  ref={captchaRef}
+                  sitekey={HCAPTCHA_SITEKEY}
+                  theme="dark"
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onExpire={() => setCaptchaToken("")}
+                />
+              </div>
               <Msg type="error" text={error} />
               <Submit text="Sign In" />
               <button
@@ -286,6 +307,15 @@ export function AuthGate({ children }) {
               <div style={{ marginBottom:20 }}>
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>Password</label>
                 <input style={inp} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters" required minLength={6} />
+              </div>
+              <div style={{ marginBottom: 14, display: "flex", justifyContent: "center" }}>
+                <HCaptcha
+                  ref={captchaRef}
+                  sitekey={HCAPTCHA_SITEKEY}
+                  theme="dark"
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onExpire={() => setCaptchaToken("")}
+                />
               </div>
               <Msg type="error" text={error} />
               <Submit text="Create Account" />
