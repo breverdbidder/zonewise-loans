@@ -24,26 +24,10 @@ const B = COLORS;
 export function ReviewStep({
   form, setStep, uploads, consentAll, setConsentAll, setSubmitted, user,
 }) {
-  const reviewBg = {
-    hardmoney: B.slate50,
-    construction: "rgba(245,158,11,0.08)",
-    dscr: "rgba(16,185,129,0.06)",
-    nodoc: "rgba(99,102,241,0.06)",
-  }[form.loanType];
-
-  const reviewBorder = {
-    hardmoney: B.slate200,
-    construction: B.orange + "40",
-    dscr: "rgba(16,185,129,0.2)",
-    nodoc: "rgba(99,102,241,0.2)",
-  }[form.loanType];
-
-  const headerLabel = {
-    hardmoney: "🏠 Hard Money Loan Application",
-    construction: "🏗️ Construction Loan Application",
-    dscr: "📈 DSCR Rental Loan Application",
-    nodoc: "📋 No-Doc Loan Application",
-  }[form.loanType];
+  const lt = LOAN_TYPES[form.loanType];
+  const reviewBg = lt.reviewBg;
+  const reviewBorder = lt.reviewBorder;
+  const headerLabel = `${lt.icon} ${lt.headerTitle}`;
 
   const sections = [
     {

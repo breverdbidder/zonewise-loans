@@ -11,19 +11,6 @@ import {
 const B = COLORS;
 const is = INPUT_STYLE;
 
-const stepTitles = {
-  hardmoney: "Loan Request",
-  construction: "Construction Loan Request",
-  dscr: "Rental Income & DSCR",
-  nodoc: "Income Verification Program",
-};
-
-const stepSubs = {
-  hardmoney: "Financing structure and exit strategy",
-  construction: "Ground-up or major renovation financing details",
-  dscr: "Property cash flow qualifies you — no personal income needed",
-  nodoc: "Alternative documentation for self-employed and non-traditional income",
-};
 
 /**
  * Loan details form — renders different fields based on loan type
@@ -38,8 +25,8 @@ export function LoanStep({ form, u, setStep }) {
     <div>
       <Card>
         <CardHead
-          title={stepTitles[form.loanType] || "Loan Details"}
-          sub={stepSubs[form.loanType] || ""}
+          title={LOAN_TYPES[form.loanType]?.stepLabel || "Loan Details"}
+          sub={LOAN_TYPES[form.loanType]?.stepSub || ""}
         />
         <div style={{ padding: "8px 24px 24px" }}>
           {/* ═══ HARD MONEY ═══ */}

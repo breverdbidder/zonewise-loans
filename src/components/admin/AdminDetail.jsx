@@ -20,12 +20,7 @@ const B = COLORS;
 export function AdminDetail({ sel, setView, setSel, doUnderwrite }) {
   const lt = LOAN_TYPES[sel.loanType];
 
-  const financialTitle = {
-    hardmoney: "Financial Summary",
-    construction: "Construction Budget & Financials",
-    dscr: "DSCR & Rental Analysis",
-    nodoc: "No-Doc Program Details",
-  }[sel.loanType];
+  const financialTitle = lt.financialTitle || "Financial Summary";
 
   const financialItems = sel.loanType === "dscr" ? [
     ["Monthly Rent", `$${sel.monthlyRent?.toLocaleString() || "—"}`],
