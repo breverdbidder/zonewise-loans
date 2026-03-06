@@ -749,29 +749,43 @@ function AdminPortal({onSwitch}){
 }
 
 // ═══════════════════════════════════════
-// ADMIN ACCESS CONTROL
+// ADMIN ACCESS CONTROL (Server-Side via Supabase user_roles table)
 // ═══════════════════════════════════════
-const ADMIN_EMAILS = ["everestcapital8@gmail.com"];
-const isAdmin = (email) => ADMIN_EMAILS.includes(email?.toLowerCase());
 
-// MAIN APP
-// ═══════════════════════════════════════
+/**
+ * Main application component with role-based portal switching.
+ * Admin access is verified server-side via Supabase user_roles table.
+ * No admin emails are stored in the client bundle.
+ */
 export default function App(){
   const { user } = useAuth();
   const [portal,setPortal]=useState("applicant");
   const [adminAuthed,setAdminAuthed]=useState(false);
+  const [adminChecked,setAdminChecked]=useState(false);
+  const [userIsAdmin,setUserIsAdmin]=useState(false);
   const [adminPw,setAdminPw]=useState("");
   const [adminErr,setAdminErr]=useState("");
   const [adminLoading,setAdminLoading]=useState(false);
 
-  const userIsAdmin = user && isAdmin(user.email);
+  // Server-side admin role check on login
+  useState(()=>{
+    if(user){
+      supabase.from("user_roles").select("role").eq("user_id",user.id).single()
+        .then(({data})=>{setUserIsAdmin(data?.role==="admin");setAdminChecked(true)})
+        .catch(()=>{setUserIsAdmin(false);setAdminChecked(true)});
+    }
+  },[user]);
 
   const handleAdminLogin = async () => {
     setAdminErr("");setAdminLoading(true);
-    // Re-authenticate with Supabase to verify password
-    const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: adminPw });
-    if (error) { setAdminErr("Invalid password. Admin access denied."); setAdminLoading(false); return; }
-    setAdminAuthed(true);setPortal("admin");setAdminLoading(false);setAdminPw("");
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: user.email, password: adminPw });
+      if (error) { setAdminErr("Invalid password. Admin access denied."); setAdminLoading(false); return; }
+      setAdminAuthed(true);setPortal("admin");setAdminLoading(false);setAdminPw("");
+    } catch (err) {
+      setAdminErr("Authentication error. Please try again.");
+      setAdminLoading(false);
+    }
   };
 
   // Admin gate: show password prompt
