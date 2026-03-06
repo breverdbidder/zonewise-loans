@@ -501,7 +501,12 @@ export function AuthGate({ children }) {
               <Msg type="success" text={message} />
               <div style={{ marginBottom:20 }}>
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>New Password</label>
-                <input style={inp} type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Min 6 characters" required minLength={6} autoFocus aria-label="New Password" />
+                <input
+                  style={inp} type="password" value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Min 6 characters" required minLength={6}
+                  autoFocus aria-label="New Password"
+                />
               </div>
               <Msg type="error" text={error} />
               <Submit text="Update Password" />

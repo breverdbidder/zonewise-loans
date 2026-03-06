@@ -133,7 +133,10 @@ export function runDebtComparison(app, ourTerms = {}) {
     verdict: ourRank <= 2 ? "COMPETITIVE" : "HIGHER_COST_JUSTIFIED",
     narrative: ourRank === 1
       ? "Our terms are the most cost-effective option including closing timeline savings."
-      : `Our rate is higher than ${ranked[0].name}, but ${ranked[0].closingTimeline - 10} extra days to close costs the borrower $${Math.round(ranked.find(r => r.type !== "our_product")?.delayPenalty || 0)} in holding costs, narrowing the gap.`,
+      : `Our rate is higher than ${ranked[0].name}, but `
+        + `${ranked[0].closingTimeline - 10} extra days to close costs the borrower `
+        + `$${Math.round(ranked.find(r => r.type !== "our_product")?.delayPenalty || 0)} `
+        + `in holding costs, narrowing the gap.`,
   };
 }
 
