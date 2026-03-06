@@ -2,9 +2,9 @@
  * @fileoverview Admin portal shell with view routing
  * @module components/admin/AdminPortal
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { COLORS } from "../../utils/constants.js";
-import { MOCK } from "../../utils/mockData.js";
+import { fetchAdminApplications } from "../../utils/adminAuth.js";
 import { runAIUnderwriting } from "../../scoring/index.js";
 import { Logo } from "../shared/Logo.jsx";
 import { Btn } from "../shared/Btn.jsx";
@@ -21,10 +21,42 @@ const B = COLORS;
  */
 export function AdminPortal({ onSwitch }) {
   const [view, setView] = useState("dashboard");
-  const [apps, setApps] = useState(MOCK);
+  const [apps, setApps] = useState([]);
   const [sel, setSel] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAdminApplications().then((rows) => {
+      const mapped = rows.map((r) => ({
+        id: r.ref_code || r.id,
+        name: r.form_data?.firstName
+          ? `${r.form_data.firstName} ${r.form_data.lastName}`
+          : "Unknown",
+        email: r.form_data?.email || "",
+        phone: r.form_data?.phone || "",
+        entity: r.form_data?.entityType || "",
+        propAddr: r.form_data?.propAddr || "",
+        propType: r.form_data?.propType || "",
+        loanType: r.loan_type || r.form_data?.loanType || "hardmoney",
+        purchasePrice: r.form_data?.purchasePrice || 0,
+        loanAmt: r.form_data?.loanAmt || 0,
+        arv: r.form_data?.arv || 0,
+        repairBudget: r.form_data?.repairBudget || 0,
+        credit: r.form_data?.credit || "",
+        experience: r.form_data?.experience || "",
+        liquid: r.form_data?.liquid || 0,
+        status: r.status || "pending",
+        submitted: r.created_at?.slice(0, 10) || "",
+        uploads: r.uploads_count || 0,
+        score: r.ai_score || null,
+        ...r.form_data,
+      }));
+      setApps(mapped);
+      setLoading(false);
+    });
+  }, []);
 
   const openApp = (a) => {
     setSel(a); setView("detail"); setAiResult(null);
@@ -95,10 +127,16 @@ export function AdminPortal({ onSwitch }) {
         padding: "24px 20px 60px",
       }}>
         {view === "dashboard" && (
-          <AdminDashboard
-            apps={apps}
-            openApp={openApp}
-          />
+          loading ? (
+            <div style={{
+              textAlign: "center", padding: 60, color: B.slate400,
+            }}>Loading applications...</div>
+          ) : (
+            <AdminDashboard
+              apps={apps}
+              openApp={openApp}
+            />
+          )
         )}
         {view === "detail" && sel && (
           <AdminDetail
