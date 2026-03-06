@@ -73,11 +73,12 @@ export function runBRRRRModel(app) {
   let totalMonthlyIncome = 0;
   let dealNum = 0;
 
-  while (availableCapital >= cashToClose && dealNum < 10) {
-    dealNum++;
+  while (dealNum < 10) {
     const dealCashNeeded = cashToClose + repairBudget + holdingCosts + netSeasoningCost;
 
     if (availableCapital < dealCashNeeded) break;
+
+    dealNum++;
 
     // Execute deal
     availableCapital -= dealCashNeeded;

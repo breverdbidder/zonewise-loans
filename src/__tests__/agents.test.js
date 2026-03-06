@@ -189,8 +189,11 @@ describe("Agent 3: Returns Engine", () => {
 });
 
 describe("Agent 6: BRRRR Chain", () => {
+  // Use a funded fixture — liquid must exceed dealCashNeeded (~$110K for base app)
+  const BRRRR_APP = { ...HARD_MONEY_APP, liquid: 150000 };
+
   test("models single deal + chain", () => {
-    const result = runBRRRRModel(HARD_MONEY_APP);
+    const result = runBRRRRModel(BRRRR_APP);
     expect(result.agentId).toBe("brrrr-chain");
     expect(result.singleDeal.totalCashInvested).toBeGreaterThan(0);
     expect(result.chain.length).toBeGreaterThanOrEqual(1);
@@ -198,9 +201,16 @@ describe("Agent 6: BRRRR Chain", () => {
   });
 
   test("calculates lender CLV", () => {
-    const result = runBRRRRModel(HARD_MONEY_APP);
+    const result = runBRRRRModel(BRRRR_APP);
     expect(result.lenderView.estimatedDeals).toBeGreaterThanOrEqual(1);
     expect(result.lenderView.estimatedRevenue).toBeGreaterThan(0);
+  });
+
+  test("chain breaks when liquid too low", () => {
+    const result = runBRRRRModel(HARD_MONEY_APP); // liquid: 80000 < dealCashNeeded
+    expect(result.chain.length).toBe(0);
+    expect(result.chainCapacity).toBe(0);
+    expect(result.flags.some(f => f.includes("CHAIN_BREAKS"))).toBe(true);
   });
 });
 

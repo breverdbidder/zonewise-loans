@@ -51,7 +51,9 @@ export function generateBugFixNotification(opts) {
   const sms = [
     `Hey ${testerName}! 🎉`,
     ``,
-    `THANK YOU for being ${testerNumber > 0 ? `our #${testerNumber}` : "a"} beta tester on ZoneWise Lending. Your feedback caught a real bug that would have frustrated every future user — incredibly valuable.`,
+    `THANK YOU for being ${testerNumber > 0 ? `our #${testerNumber}` : "a"} beta tester` +
+    ` on ZoneWise Lending. Your feedback caught a real bug that would have` +
+    ` frustrated every future user — incredibly valuable.`,
     ``,
     `🐛 THE BUG YOU FOUND`,
     bugDescription,
