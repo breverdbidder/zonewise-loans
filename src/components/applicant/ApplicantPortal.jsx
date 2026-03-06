@@ -4,6 +4,7 @@
  */
 import { useState, useRef } from "react";
 import { useAuth } from "../../Auth.jsx";
+import { supabase } from "../../supabase.js";
 import { COLORS, INPUT_STYLE, LOAN_TYPES } from "../../utils/constants.js";
 import { uid } from "../../utils/formatters.js";
 import { Logo } from "../shared/Logo.jsx";
@@ -74,16 +75,45 @@ export function ApplicantPortal({ onSwitch }) {
 
   const u = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  const handleFiles = (e) => {
-    Array.from(e.target.files || []).forEach((f) => {
-      if (f.size > 10 * 1024 * 1024) return;
-      const r = new FileReader();
-      r.onload = (ev) => setUploads((p) => [
+  const handleFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+    for (const f of files) {
+      if (f.size > 10 * 1024 * 1024) continue;
+      const fileId = uid();
+      const filePath = `${user?.id || "anon"}/${fileId}-${f.name}`;
+
+      // Show local preview immediately
+      const localUrl = URL.createObjectURL(f);
+      setUploads((p) => [
         ...p,
-        { id: uid(), name: f.name, type: f.type, url: ev.target.result },
+        { id: fileId, name: f.name, type: f.type, url: localUrl, uploading: true },
       ]);
-      r.readAsDataURL(f);
-    });
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from("loan-documents")
+        .upload(filePath, f, { upsert: false });
+
+      if (!error && data?.path) {
+        const { data: pub } = supabase.storage
+          .from("loan-documents")
+          .getPublicUrl(data.path);
+        setUploads((p) =>
+          p.map((u) =>
+            u.id === fileId
+              ? { ...u, url: pub?.publicUrl || localUrl, uploading: false, storagePath: data.path }
+              : u
+          )
+        );
+      } else {
+        // Keep local preview on upload failure
+        setUploads((p) =>
+          p.map((u) =>
+            u.id === fileId ? { ...u, uploading: false } : u
+          )
+        );
+      }
+    }
   };
 
   if (submitted) return <SubmittedScreen />;

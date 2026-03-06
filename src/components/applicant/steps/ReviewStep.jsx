@@ -276,6 +276,9 @@ export function ReviewStep({
                   status: "pending",
                   form_data: form,
                   uploads_count: uploads.length,
+                  file_urls: uploads
+                    .filter((f) => f.storagePath)
+                    .map((f) => f.storagePath),
                 });
             } catch (e) {
               console.error("Save error:", e);

@@ -89,6 +89,15 @@ export function DocsStep({
                       </span>
                     </div>
                   )}
+                  {f.uploading && (
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      display: "flex", alignItems: "center",
+                      justifyContent: "center",
+                      background: "rgba(0,0,0,0.4)",
+                      color: "#fff", fontSize: 11, fontWeight: 600,
+                    }}>Uploading...</div>
+                  )}
                   <div style={{
                     position: "absolute", bottom: 0, left: 0, right: 0,
                     padding: "6px 10px",
