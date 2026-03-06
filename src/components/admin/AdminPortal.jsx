@@ -58,10 +58,18 @@ export function AdminPortal({ onSwitch }) {
     });
   }, []);
 
+  /**
+   * Opens a single application in the detail view.
+   * @param {Object} a - Application object to display
+   */
   const openApp = (a) => {
     setSel(a); setView("detail"); setAiResult(null);
   };
 
+  /**
+   * Runs AI underwriting on the selected application and updates state.
+   * @returns {Promise<void>}
+   */
   const doUnderwrite = async () => {
     if (!sel) return;
     setAiLoading(true);

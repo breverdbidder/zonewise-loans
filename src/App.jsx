@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Root application component for ZoneWise.AI Loan Platform.
+ * Manages portal switching between applicant and admin views,
+ * including server-side admin role verification and password re-authentication.
+ * @module App
+ */
 import { useState, useEffect } from "react";
 import { AuthGate, useAuth } from "./Auth";
 import { supabase } from "./supabase";
@@ -7,6 +13,12 @@ import { AdminPortal } from "./components/admin/AdminPortal";
 
 const B = COLORS;
 
+/**
+ * Root application component that handles portal routing and admin authentication.
+ * Checks user_roles table for admin privileges and requires password re-entry
+ * before granting admin access.
+ * @returns {JSX.Element} The rendered applicant or admin portal wrapped in AuthGate
+ */
 export default function App() {
   const { user } = useAuth();
   const [portal, setPortal] = useState("applicant");

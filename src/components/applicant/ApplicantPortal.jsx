@@ -73,8 +73,15 @@ export function ApplicantPortal({ onSwitch }) {
   const [consentAll, setConsentAll] = useState([false, false, false]);
   const fileRef = useRef();
 
+  /** @param {string} k - Form field key @param {*} v - New value */
   const u = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
+  /**
+   * Handles file selection, previews locally, and uploads to Supabase Storage.
+   * Skips files exceeding 10 MB.
+   * @param {Event} e - File input change event
+   * @returns {Promise<void>}
+   */
   const handleFiles = async (e) => {
     const files = Array.from(e.target.files || []);
     for (const f of files) {

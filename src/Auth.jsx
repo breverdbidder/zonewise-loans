@@ -1,3 +1,9 @@
+/**
+ * @fileoverview Authentication module for ZoneWise.AI loan portal.
+ * Provides useAuth hook for session management and AuthGate component
+ * that renders login/signup/password-reset forms when unauthenticated.
+ * @module Auth
+ */
 import { useState, useEffect, useRef } from "react";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { supabase } from "./supabase";
@@ -17,6 +23,11 @@ const inp = {
   fontFamily:"'Plus Jakarta Sans',sans-serif",transition:"border-color 0.2s"
 };
 
+/**
+ * Custom hook for Supabase authentication state management.
+ * Tracks user session, provides signOut, and handles auth state changes.
+ * @returns {{user: Object|null, loading: boolean, signOut: Function}}
+ */
 export function useAuth() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +47,14 @@ export function useAuth() {
   return { user, loading, signOut };
 }
 
+/**
+ * Authentication gate component. Renders children only when user is authenticated.
+ * Shows login/signup/password-reset forms when unauthenticated.
+ * Supports modes: login, signup, reset_request, reset_code, reset_newpw, verify.
+ * @param {Object} props
+ * @param {React.ReactNode} props.children - Protected content to render when authenticated
+ * @returns {JSX.Element}
+ */
 export function AuthGate({ children }) {
   const { user, loading } = useAuth();
   // modes: login | signup | reset_request | reset_code | reset_newpw | verify
@@ -76,9 +95,16 @@ export function AuthGate({ children }) {
 
   if (user) return children;
 
+  /** Clears error and message state */
   const clear = () => { setError(""); setMessage(""); };
+  /** @param {string} m - Mode to switch to */
   const go = (m) => { clear(); setMode(m); };
 
+  /**
+   * Handles email/password login with hCaptcha token.
+   * @param {Event} e - Form submit event
+   * @returns {Promise<void>}
+   */
   const handleLogin = async (e) => {
     e.preventDefault(); clear(); setSubmitting(true);
     const { error } = await supabase.auth.signInWithPassword({
@@ -91,6 +117,11 @@ export function AuthGate({ children }) {
     setSubmitting(false);
   };
 
+  /**
+   * Handles new account registration with hCaptcha token.
+   * @param {Event} e - Form submit event
+   * @returns {Promise<void>}
+   */
   const handleSignup = async (e) => {
     e.preventDefault(); clear(); setSubmitting(true);
     const { data, error } = await supabase.auth.signUp({
@@ -109,6 +140,11 @@ export function AuthGate({ children }) {
     setSubmitting(false);
   };
 
+  /**
+   * Sends a password reset email to the user.
+   * @param {Event} e - Form submit event
+   * @returns {Promise<void>}
+   */
   const handleResetRequest = async (e) => {
     e.preventDefault(); clear(); setSubmitting(true);
     if (!email) { setError("Enter your email address"); setSubmitting(false); return; }
@@ -126,6 +162,11 @@ export function AuthGate({ children }) {
     setSubmitting(false);
   };
 
+  /**
+   * Verifies the 6-digit OTP recovery code from email.
+   * @param {Event} e - Form submit event
+   * @returns {Promise<void>}
+   */
   const handleVerifyOtp = async (e) => {
     e.preventDefault(); clear(); setSubmitting(true);
     if (!otp || otp.length < 6) { setError("Enter the 6-digit code from your email"); setSubmitting(false); return; }
@@ -141,6 +182,11 @@ export function AuthGate({ children }) {
     setSubmitting(false);
   };
 
+  /**
+   * Sets a new password after successful OTP verification or recovery link.
+   * @param {Event} e - Form submit event
+   * @returns {Promise<void>}
+   */
   const handleSetNewPassword = async (e) => {
     e.preventDefault(); clear(); setSubmitting(true);
     if (newPassword.length < 6) { setError("Password must be at least 6 characters"); setSubmitting(false); return; }
@@ -155,6 +201,10 @@ export function AuthGate({ children }) {
     setSubmitting(false);
   };
 
+  /**
+   * Resends the password reset email.
+   * @returns {Promise<void>}
+   */
   const handleResendReset = async () => {
     clear(); setSubmitting(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -174,6 +224,13 @@ export function AuthGate({ children }) {
     reset_newpw: ["Set New Password", "Choose a strong password — all credentials are encrypted at rest"],
   };
 
+  /**
+   * Inline message component for error/success feedback.
+   * @param {Object} props
+   * @param {"error"|"success"} props.type - Message type
+   * @param {string} props.text - Message text
+   * @returns {JSX.Element|null}
+   */
   const Msg = ({ type, text }) => text ? (
     <div style={{
       background: type === "error" ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.12)",
@@ -183,6 +240,12 @@ export function AuthGate({ children }) {
     }}>{type === "error" ? "⚠️" : "✅"} {text}</div>
   ) : null;
 
+  /**
+   * Styled submit button with loading state.
+   * @param {Object} props
+   * @param {string} props.text - Button label
+   * @returns {JSX.Element}
+   */
   const Submit = ({ text }) => (
     <button type="submit" disabled={submitting} style={{
       width:"100%",padding:"13px",borderRadius:8,fontSize:14,fontWeight:700,
@@ -193,6 +256,13 @@ export function AuthGate({ children }) {
     }}>{submitting ? "Processing…" : text}</button>
   );
 
+  /**
+   * Styled text link button for mode switching.
+   * @param {Object} props
+   * @param {Function} props.onClick - Click handler
+   * @param {string} props.text - Link text
+   * @returns {JSX.Element}
+   */
   const Link = ({ onClick, text }) => (
     <button type="button" onClick={onClick} style={{
       background:"none",border:"none",color:B.orangeLight,fontWeight:600,
