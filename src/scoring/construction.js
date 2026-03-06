@@ -222,8 +222,22 @@ export function runConstructionUnderwriting(app) {
     strengths: strengths.slice(0, 4),
     risks: risks.slice(0, 3),
     conditions: conditions.slice(0, 4),
-    deal_summary: `${constTypeLabel} ${app.propType || "property"} at ${app.propAddr} — $${(app.lotValue || 0).toLocaleString()} land + $${(app.totalBudget || app.hardCosts || 0).toLocaleString()} budget targeting $${completedVal.toLocaleString()} completed value. ${ltc.toFixed(0)}% LTC.`,
-    exit_viability: `${constTypeLabel} exit via ${completedVal > 0 ? `sale at $${completedVal.toLocaleString()} completed value` : "sale upon completion"} or refinance to permanent financing. ${ltv <= 70 ? "Strong completed LTV supports multiple exit paths." : "Completed LTV requires market price achievement."}`,
-    market_commentary: `${app.propAddr?.includes("FL") ? "Florida" : "Local"} construction market shows active new development activity. ${app.propType || "Property"} completions in this submarket are achieving strong absorption rates and competitive pricing.`,
+    deal_summary: `${constTypeLabel} ${app.propType || "property"} at ${app.propAddr}`
+      + ` — $${(app.lotValue || 0).toLocaleString()} land`
+      + ` + $${(app.totalBudget || app.hardCosts || 0).toLocaleString()}`
+      + ` budget targeting $${completedVal.toLocaleString()}`
+      + ` completed value. ${ltc.toFixed(0)}% LTC.`,
+    exit_viability: `${constTypeLabel} exit via `
+      + `${completedVal > 0
+        ? `sale at $${completedVal.toLocaleString()} completed value`
+        : "sale upon completion"}`
+      + ` or refinance to permanent financing. `
+      + `${ltv <= 70
+        ? "Strong completed LTV supports multiple exit paths."
+        : "Completed LTV requires market price achievement."}`,
+    market_commentary: `${app.propAddr?.includes("FL") ? "Florida" : "Local"}`
+      + ` construction market shows active new development activity.`
+      + ` ${app.propType || "Property"} completions in this submarket`
+      + ` are achieving strong absorption rates and competitive pricing.`,
   };
 }

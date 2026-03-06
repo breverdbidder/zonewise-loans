@@ -189,7 +189,12 @@ export function AuthGate({ children }) {
   );
 
   return (
-    <div style={{ minHeight:"100vh",background:`linear-gradient(160deg,${B.navyDeep} 0%,${B.navy} 50%,${B.navyMid} 100%)`,display:"flex",alignItems:"center",justifyContent:"center",padding:20,position:"relative",overflow:"hidden" }}>
+    <div style={{
+      minHeight:"100vh",
+      background:`linear-gradient(160deg,${B.navyDeep} 0%,${B.navy} 50%,${B.navyMid} 100%)`,
+      display:"flex",alignItems:"center",justifyContent:"center",
+      padding:20,position:"relative",overflow:"hidden"
+    }}>
       <div style={{ position:"absolute",top:"-20%",right:"-15%",width:600,height:600,background:`radial-gradient(circle,${B.orangeGlow},transparent 65%)`,borderRadius:"50%" }} />
       <div style={{ position:"absolute",bottom:"-10%",left:"-10%",width:400,height:400,background:"radial-gradient(circle,rgba(30,58,95,0.3),transparent 65%)",borderRadius:"50%" }} />
 
@@ -197,7 +202,13 @@ export function AuthGate({ children }) {
         {/* Logo */}
         <div style={{ textAlign:"center",marginBottom:32 }}>
           <div style={{ display:"inline-flex",alignItems:"center",gap:14 }}>
-            <div style={{ width:48,height:48,background:`linear-gradient(135deg,${B.orange},${B.orangeLight})`,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Fraunces',Georgia,serif",fontWeight:900,fontSize:22,color:B.navyDeep }}>Z</div>
+            <div style={{
+              width:48,height:48,
+              background:`linear-gradient(135deg,${B.orange},${B.orangeLight})`,
+              borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",
+              fontFamily:"'Fraunces',Georgia,serif",fontWeight:900,fontSize:22,
+              color:B.navyDeep
+            }}>Z</div>
             <div style={{ textAlign:"left" }}>
               <div style={{ color:"#fff",fontWeight:700,fontSize:20 }}>ZoneWise.AI</div>
               <div style={{ color:B.orangeLight,fontSize:11,fontWeight:500,letterSpacing:2,textTransform:"uppercase" }}>Loan Intelligence</div>
@@ -217,7 +228,12 @@ export function AuthGate({ children }) {
           {/* LOGIN */}
           {mode === "login" && (
             <form onSubmit={handleLogin}>
-              <div style={{ background:"rgba(30,58,95,0.15)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:11, color:B.s300, lineHeight:1.5, textAlign:"center" }}>
+              <div style={{
+                background:"rgba(30,58,95,0.15)",
+                border:"1px solid rgba(255,255,255,0.08)",
+                borderRadius:8, padding:"10px 14px", marginBottom:16,
+                fontSize:11, color:B.s300, lineHeight:1.5, textAlign:"center"
+              }}>
                 🔐 Secure connection — your credentials are encrypted end-to-end
               </div>
               <div style={{ marginBottom:14 }}>
@@ -230,7 +246,16 @@ export function AuthGate({ children }) {
               </div>
               <Msg type="error" text={error} />
               <Submit text="Sign In" />
-              <button type="button" onClick={() => go("reset_request")} style={{ width:"100%",marginTop:10,padding:"8px",background:"none",border:"none",color:B.s400,fontSize:12,cursor:"pointer",fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+              <button
+                type="button"
+                onClick={() => go("reset_request")}
+                style={{
+                  width:"100%",marginTop:10,padding:"8px",
+                  background:"none",border:"none",color:B.s400,
+                  fontSize:12,cursor:"pointer",
+                  fontFamily:"'Plus Jakarta Sans',sans-serif"
+                }}
+              >
                 Forgot your password?
               </button>
             </form>
@@ -239,8 +264,16 @@ export function AuthGate({ children }) {
           {/* SIGNUP */}
           {mode === "signup" && (
             <form onSubmit={handleSignup}>
-              <div style={{ background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.15)", borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:11, color:"#6ee7b7", lineHeight:1.5 }}>
-                🏦 <strong>Bank-Grade Security:</strong> Your personal and financial information is encrypted with 256-bit AES encryption, stored on SOC 2 certified infrastructure, and never shared with third parties.
+              <div style={{
+                background:"rgba(16,185,129,0.08)",
+                border:"1px solid rgba(16,185,129,0.15)",
+                borderRadius:8, padding:"10px 14px", marginBottom:16,
+                fontSize:11, color:"#6ee7b7", lineHeight:1.5
+              }}>
+                🏦 <strong>Bank-Grade Security:</strong>{" "}
+                Your personal and financial information is encrypted with
+                256-bit AES encryption, stored on SOC 2 certified
+                infrastructure, and never shared with third parties.
               </div>
               <div style={{ marginBottom:14 }}>
                 <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>Full Name</label>
@@ -264,8 +297,18 @@ export function AuthGate({ children }) {
             <div style={{ textAlign:"center" }}>
               <div style={{ fontSize:48,marginBottom:16 }}>📧</div>
               <Msg type="success" text={message} />
-              <div style={{ background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)",borderRadius:8,padding:"12px 14px",marginBottom:16,fontSize:11,color:B.orangeLight,lineHeight:1.6 }}>
-                💡 <strong>Can't find the email?</strong> Check your spam/junk folder. The email comes from <code style={{background:"rgba(255,255,255,0.1)",padding:"1px 4px",borderRadius:3}}>noreply@mail.app.supabase.io</code>
+              <div style={{
+                background:"rgba(245,158,11,0.08)",
+                border:"1px solid rgba(245,158,11,0.2)",
+                borderRadius:8,padding:"12px 14px",marginBottom:16,
+                fontSize:11,color:B.orangeLight,lineHeight:1.6
+              }}>
+                💡 <strong>Can't find the email?</strong>{" "}
+                Check your spam/junk folder. The email comes from{" "}
+                <code style={{
+                  background:"rgba(255,255,255,0.1)",
+                  padding:"1px 4px",borderRadius:3
+                }}>noreply@mail.app.supabase.io</code>
               </div>
               <button onClick={() => go("login")} style={{
                 width:"100%",padding:"12px",borderRadius:8,fontSize:14,fontWeight:600,
@@ -291,8 +334,20 @@ export function AuthGate({ children }) {
           {mode === "reset_code" && (
             <div>
               <Msg type="success" text={message} />
-              <div style={{ background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)",borderRadius:8,padding:"12px 14px",marginBottom:16,fontSize:11,color:B.orangeLight,lineHeight:1.6 }}>
-                💡 <strong>Check spam/junk!</strong> The email sender is <code style={{background:"rgba(255,255,255,0.1)",padding:"1px 4px",borderRadius:3}}>noreply@mail.app.supabase.io</code>. Look for subject: <em>"Reset Your ZoneWise.AI Password"</em>
+              <div style={{
+                background:"rgba(245,158,11,0.08)",
+                border:"1px solid rgba(245,158,11,0.2)",
+                borderRadius:8,padding:"12px 14px",marginBottom:16,
+                fontSize:11,color:B.orangeLight,lineHeight:1.6
+              }}>
+                💡 <strong>Check spam/junk!</strong>{" "}
+                The email sender is{" "}
+                <code style={{
+                  background:"rgba(255,255,255,0.1)",
+                  padding:"1px 4px",borderRadius:3
+                }}>noreply@mail.app.supabase.io</code>.{" "}
+                Look for subject:{" "}
+                <em>"Reset Your ZoneWise.AI Password"</em>
               </div>
               <p style={{color:B.s300,fontSize:13,marginBottom:16,lineHeight:1.6}}>
                 Option 1: <strong>Click the link</strong> in the email to reset directly.<br/>
@@ -301,13 +356,31 @@ export function AuthGate({ children }) {
               <form onSubmit={handleVerifyOtp}>
                 <div style={{ marginBottom:16 }}>
                   <label style={{ display:"block",fontSize:12,fontWeight:600,color:B.s300,marginBottom:5 }}>Recovery Code</label>
-                  <input style={{...inp,textAlign:"center",fontSize:24,letterSpacing:8,fontFamily:"'JetBrains Mono',monospace"}} value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g,"").slice(0,8))} placeholder="000000" maxLength={8} />
+                  <input
+                    style={{
+                      ...inp,textAlign:"center",fontSize:24,
+                      letterSpacing:8,fontFamily:"'JetBrains Mono',monospace"
+                    }}
+                    value={otp}
+                    onChange={e => setOtp(e.target.value.replace(/\D/g,"").slice(0,8))}
+                    placeholder="000000"
+                    maxLength={8}
+                  />
                 </div>
                 <Msg type="error" text={error} />
                 <Submit text="Verify Code" />
               </form>
               <div style={{display:"flex",justifyContent:"space-between",marginTop:12}}>
-                <button type="button" onClick={handleResendReset} disabled={submitting} style={{ background:"none",border:"none",color:B.s400,fontSize:12,cursor:"pointer",fontFamily:"'Plus Jakarta Sans',sans-serif" }}>
+                <button
+                  type="button"
+                  onClick={handleResendReset}
+                  disabled={submitting}
+                  style={{
+                    background:"none",border:"none",color:B.s400,
+                    fontSize:12,cursor:"pointer",
+                    fontFamily:"'Plus Jakarta Sans',sans-serif"
+                  }}
+                >
                   📧 Resend email
                 </button>
                 <button type="button" onClick={() => go("login")} style={{ background:"none",border:"none",color:B.s400,fontSize:12,cursor:"pointer",fontFamily:"'Plus Jakarta Sans',sans-serif" }}>

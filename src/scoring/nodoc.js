@@ -217,10 +217,21 @@ export function runNoDocUnderwriting(app) {
     strengths: strengths.slice(0, 4),
     risks: risks.slice(0, 3),
     conditions: conditions.slice(0, 4),
-    deal_summary: `${subtypeLabel} ${app.propType} at ${app.propAddr} — $${app.purchasePrice?.toLocaleString()} purchase at ${ltv.toFixed(0)}% LTV. ${app.occupancy === "primary" ? "Owner-occupied" : "Investment"} property. ${app.avgMonthlyDeposits ? `$${app.avgMonthlyDeposits?.toLocaleString()}/mo avg deposits.` : ""}`,
+    deal_summary: `${subtypeLabel} ${app.propType} at ${app.propAddr}`
+      + ` — $${app.purchasePrice?.toLocaleString()} purchase`
+      + ` at ${ltv.toFixed(0)}% LTV.`
+      + ` ${app.occupancy === "primary" ? "Owner-occupied" : "Investment"}`
+      + ` property.`
+      + `${app.avgMonthlyDeposits
+        ? ` $${app.avgMonthlyDeposits?.toLocaleString()}/mo avg deposits.`
+        : ""}`,
     exit_viability: app.occupancy === "primary"
       ? "Primary residence — standard mortgage exit via refinance to conventional when documentation becomes available."
       : "Investment property — rental income supports ongoing debt service with eventual refinance to DSCR or conventional product.",
-    market_commentary: `${app.propAddr?.includes("FL") ? "Florida" : "Local"} real estate market supports ${app.occupancy === "primary" ? "owner-occupied" : "investment"} acquisitions. ${app.propType} values in this area show stability with moderate appreciation trends.`,
+    market_commentary: `${app.propAddr?.includes("FL") ? "Florida" : "Local"}`
+      + ` real estate market supports`
+      + ` ${app.occupancy === "primary" ? "owner-occupied" : "investment"}`
+      + ` acquisitions. ${app.propType} values in this area show`
+      + ` stability with moderate appreciation trends.`,
   };
 }

@@ -204,7 +204,10 @@ export function runDSCRUnderwriting(app) {
     strengths: strengths.slice(0, 4),
     risks: risks.slice(0, 3),
     conditions: conditions.slice(0, 4),
-    deal_summary: `DSCR ${app.propType} at ${app.propAddr} — $${app.purchasePrice?.toLocaleString()} purchase, $${app.monthlyRent?.toLocaleString()}/mo rent, ${dscr.toFixed(2)}x DSCR. ${ltv.toFixed(0)}% LTV.`,
+    deal_summary: `DSCR ${app.propType} at ${app.propAddr}`
+      + ` — $${app.purchasePrice?.toLocaleString()} purchase,`
+      + ` $${app.monthlyRent?.toLocaleString()}/mo rent,`
+      + ` ${dscr.toFixed(2)}x DSCR. ${ltv.toFixed(0)}% LTV.`,
     exit_viability: `Long-term hold with ${dscr.toFixed(2)}x DSCR provides ${dscr >= 1.25 ? "strong" : "adequate"} ongoing cash flow.`,
     market_commentary: `Rental market in ${app.propAddr?.includes("FL") ? "Florida" : "the local area"} shows strong fundamentals for ${app.propType} properties.`,
   };

@@ -205,8 +205,23 @@ export function runHardMoneyUnderwriting(app) {
     strengths: strengths.slice(0, 4),
     risks: risks.slice(0, 3),
     conditions: conditions.slice(0, 4),
-    deal_summary: `${app.propType} acquisition at ${app.propAddr} — $${app.purchasePrice?.toLocaleString()} purchase with $${app.repairBudget?.toLocaleString()} renovation targeting $${app.arv?.toLocaleString()} ARV. ${app.purpose} exit with ${app.term}-month term.`,
-    exit_viability: `${app.purpose} exit is ${profitMargin >= 15 ? "well-supported" : "viable but tight"} with projected profit of $${profit.toLocaleString()} (${profitMargin.toFixed(1)}% margin). ${profitMargin >= 20 ? "Strong ARV-to-cost ratio provides comfortable margin." : "Recommend conservative ARV validation."}`,
-    market_commentary: `The ${app.propAddr?.includes("FL") ? "Florida" : "local"} market demonstrates strong fundamentals with population growth and housing demand supporting asset values. ${app.propType} properties in this submarket show stable absorption rates.`,
+    deal_summary: `${app.propType} acquisition at ${app.propAddr}`
+      + ` — $${app.purchasePrice?.toLocaleString()} purchase`
+      + ` with $${app.repairBudget?.toLocaleString()} renovation`
+      + ` targeting $${app.arv?.toLocaleString()} ARV.`
+      + ` ${app.purpose} exit with ${app.term}-month term.`,
+    exit_viability: `${app.purpose} exit is `
+      + `${profitMargin >= 15 ? "well-supported" : "viable but tight"}`
+      + ` with projected profit of $${profit.toLocaleString()}`
+      + ` (${profitMargin.toFixed(1)}% margin). `
+      + `${profitMargin >= 20
+        ? "Strong ARV-to-cost ratio provides comfortable margin."
+        : "Recommend conservative ARV validation."}`,
+    market_commentary: `The `
+      + `${app.propAddr?.includes("FL") ? "Florida" : "local"}`
+      + ` market demonstrates strong fundamentals with`
+      + ` population growth and housing demand supporting`
+      + ` asset values. ${app.propType} properties in this`
+      + ` submarket show stable absorption rates.`,
   };
 }
