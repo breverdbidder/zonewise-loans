@@ -2,7 +2,7 @@
  * @fileoverview Applicant loan application portal with 6-step form wizard
  * @module components/applicant/ApplicantPortal
  */
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useAuth } from "../../Auth.jsx";
 import { supabase } from "../../supabase.js";
 import { COLORS, INPUT_STYLE, LOAN_TYPES } from "../../utils/constants.js";
@@ -74,7 +74,7 @@ export function ApplicantPortal({ onSwitch }) {
   const fileRef = useRef();
 
   /** @param {string} k - Form field key @param {*} v - New value */
-  const u = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const u = useCallback((k, v) => setForm((p) => ({ ...p, [k]: v })), []);
 
   /**
    * Handles file selection, previews locally, and uploads to Supabase Storage.
