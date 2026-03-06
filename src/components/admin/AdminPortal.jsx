@@ -11,6 +11,7 @@ import { Btn } from "../shared/Btn.jsx";
 import { AdminDashboard } from "./AdminDashboard.jsx";
 import { AdminDetail } from "./AdminDetail.jsx";
 import { AdminUnderwriting } from "./AdminUnderwriting.jsx";
+import { BetaPanel } from "./BetaPanel.jsx";
 const B = COLORS;
 
 /**
@@ -119,6 +120,28 @@ export function AdminPortal({ onSwitch }) {
               Ariel Shapira
             </span>
             <Btn
+              variant="ghost"
+              onClick={() => setView("dashboard")}
+              style={{
+                color: view === "dashboard" ? B.orange : B.slate400,
+                borderColor: view === "dashboard"
+                  ? "rgba(245,158,11,0.4)"
+                  : "rgba(255,255,255,0.15)",
+                fontSize: 11,
+              }}
+            >📋 Dashboard</Btn>
+            <Btn
+              variant="ghost"
+              onClick={() => setView("beta")}
+              style={{
+                color: view === "beta" ? B.orange : B.slate400,
+                borderColor: view === "beta"
+                  ? "rgba(245,158,11,0.4)"
+                  : "rgba(255,255,255,0.15)",
+                fontSize: 11,
+              }}
+            >📣 Beta Comms</Btn>
+            <Btn
               variant="ghost" onClick={onSwitch}
               style={{
                 color: B.slate400,
@@ -162,6 +185,9 @@ export function AdminPortal({ onSwitch }) {
             setView={setView}
             setApps={setApps}
           />
+        )}
+        {view === "beta" && (
+          <BetaPanel />
         )}
       </div>
     </div>
