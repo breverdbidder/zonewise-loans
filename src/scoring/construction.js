@@ -57,8 +57,8 @@ export function runConstructionUnderwriting(app) {
 
   // Credit (max 20)
   const creditMap = {
-    "720+": 20, "680-719": 15, "640-679": 10,
-    "600-639": 6, "below600": 3,
+    "760+": 20, "720-759": 18, "700-719": 16, "680-699": 14,
+    "660-679": 11, "640-659": 8, "620-639": 5, "below620": 3,
   };
   score += (creditMap[app.credit] || 8);
 
