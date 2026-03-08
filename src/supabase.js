@@ -12,10 +12,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials not found in environment variables. Auth will not work.')
+  throw new Error('VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY required')
 }
 
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder'
-)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
