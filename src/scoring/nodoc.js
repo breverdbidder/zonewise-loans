@@ -208,9 +208,7 @@ export function runNoDocUnderwriting(app) {
     score,
     verdict,
     verdict_summary: verdictSummaries[verdict],
-    approval_probability: Math.min(
-      Math.max(score + Math.floor(Math.random() * 6) - 3, 5), 98
-    ),
+    approval_probability: Math.min(Math.max(score, 5), 98),
     recommended_rate: rate,
     recommended_ltv_cap: score >= 80 ? "80%" : "75%",
     recommended_term: "30 years fixed",
