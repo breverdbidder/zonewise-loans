@@ -41,8 +41,8 @@ export function runNoDocUnderwriting(app) {
     ? ((1 - app.loanAmt / app.purchasePrice) * 100) : 0;
 
   const creditMap = {
-    "720+": 25, "700-719": 20, "680-719": 15,
-    "660-679": 10, "640-659": 6, "620-639": 3, "below600": 1,
+    "760+": 25, "720-759": 22, "700-719": 18, "680-699": 15,
+    "660-679": 10, "640-659": 6, "620-639": 3, "below620": 1,
   };
 
   let score = 0;
