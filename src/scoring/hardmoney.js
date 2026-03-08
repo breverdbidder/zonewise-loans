@@ -196,9 +196,7 @@ export function runHardMoneyUnderwriting(app) {
     score,
     verdict,
     verdict_summary: verdictSummaries[verdict],
-    approval_probability: Math.min(
-      Math.max(score + Math.floor(Math.random() * 6) - 3, 5), 98
-    ),
+    approval_probability: Math.min(Math.max(score, 5), 98),
     recommended_rate: rate,
     recommended_ltv_cap: maxLtv,
     recommended_term: `${app.term} months`,
